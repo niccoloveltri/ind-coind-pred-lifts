@@ -36,10 +36,7 @@ import Pred-Lift-ab
 open Pred-Lift-ab sI s-obs s-leaf s-node
 
 
--- -- Decomposable:
-
-
--- deco formulation
+-- α-decomposition
 s-deco : deco
 s-deco ter = atom (ter , ter)
 
@@ -51,12 +48,12 @@ s-deco-α-unf : (deco-α-unf s-deco)
 s-deco-α-unf ter (leaf y) x = leaf-α refl x
 s-deco-α-unf ter (node tt ts) (node-α x) = node-α (s-deco-α-unf ter (force (ts tt)) x)
 
--- PROPOSITION:   strong decomposable
+-- α-decomposability
 s-is-strong : Strong-Decomposable
 s-is-strong = deco-α-decomp s-deco s-deco-α-seq s-deco-α-unf
 
 
--- Coinductive
+-- β-decomposition
 s-deco' : deco
 s-deco' o = dualTest (s-deco o)
 
@@ -74,5 +71,6 @@ s-deco-β-unf ter (node tt ts) (β-node x) = β-node
   (s-deco-β-unf' ter (force (ts tt)) (β-force x))
 β-force (s-deco-β-unf' ter d hypo) = s-deco-β-unf ter d hypo
 
+-- β-decomposability
 s-β-decomp : β-Strong-Decomposable
 s-β-decomp = deco-β-decomp s-deco' s-deco-β-seq s-deco-β-unf

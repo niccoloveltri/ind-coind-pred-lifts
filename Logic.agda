@@ -3,8 +3,8 @@ open import Data.Product renaming (map to map×)
 open import Data.Bool
 
 module Logic {Sig : Set} (ar : Sig → Set)
-             (O : Set) (αl : O → Bool)
-             (αn : (k : Sig) → O → Test (ar k × O)) where
+             (O : Set) (πl : O → Bool)
+             (πn : (k : Sig) → O → Test (ar k × O)) where
 
 open import Relation.Binary.PropositionalEquality
 open import Data.Sum renaming (map to map⊎)
@@ -25,7 +25,7 @@ open Program-Types ar public
 
 -- Importing inductive and coinductive properties
 import Pred-Lift-ab
-open Pred-Lift-ab ar O αl αn public
+open Pred-Lift-ab ar O πl πn public
 
 
 -- Program formulas
@@ -41,7 +41,7 @@ data A-form : Bool → Aty → Set where
   bas-Comβ : {τ : Aty} → O → (A-form val τ) → (A-form cpt τ)
   clo-Form : {a : Bool} → {τ : Aty} → Test (A-form a τ) → A-form a τ 
 
-
+-- Defining when a program satisfies the property described by some formula
 infix 6 _⊧_
 _⊧_ : {b : Bool} → {τ : Aty} → (P : A-term b τ) → (ϕ : A-form b τ) → Set
 n ⊧ bas-Nat ϕ = n ≡ ϕ
@@ -61,13 +61,12 @@ P ⊧ clo-Form (⋁ x) = Σ ℕ (λ n → P ⊧ clo-Form (x n))
 P ⊧ clo-Form (⋀ x) = (n : ℕ) → (P ⊧ clo-Form (x n))
 
 
--- Extensional (hopefully congruent) equivalence
-
+-- Logical approximation, which induces a logical equivalence
 Log-Order : (a : Bool) → (τ : Aty) → (P Q : A-term a τ) → Set
 Log-Order a τ P Q = (ϕ : A-form a τ) → (P ⊧ ϕ) → (Q ⊧ ϕ)
 
--- Helpful sugar
 
+-- Helpful sugar for formulas
 clo-Form-eq  : {a : Bool} → {τ : Aty} → (tes : Test (A-form a τ))
   → (P : A-term a τ) → (liftTest (λ ϕ → (P ⊧ ϕ)) tes) ≡ (P ⊧ clo-Form tes)
 clo-Form-eq (atom x) P = refl
@@ -97,8 +96,7 @@ clo-Form-eq2 cpt f P = refl
 clo-Form-eq2 (⋁ x) f P = cong ∃ (funext (λ n → clo-Form-eq2 (x n) f P))
 clo-Form-eq2 (⋀ x) f P =  cong (λ z → (n : _) → (z n)) (funext (λ n → clo-Form-eq2 (x n) f P))
 
--- examples
-
+-- example predicates on natural numbers
 N-twice : ℕ → ℕ
 N-twice zero = zero
 N-twice (suc n) = suc (suc (N-twice n))
@@ -117,7 +115,6 @@ N-twice-even : (n : ℕ) → (N-even (N-twice n))
 N-twice-even zero = tt
 N-twice-even (suc n) = N-twice-even n
 
--- IXI in standard library?
 N-sueq : (n m : ℕ) → ((suc n) ≡ (suc m)) → (n ≡ m)
 N-sueq n .n refl = refl
 
@@ -132,7 +129,9 @@ even-equiv-l zero hypo = zero , refl
 even-equiv-l (suc (suc V)) hypo with even-equiv-l V hypo
 ... | fst , snd = (suc fst) , (cong (λ x → suc (suc x)) snd)
 
--- Positive negation exists
+
+-- ====================================
+-- Negation as a operation in the logic
 
 neg-Form : {b : Bool} → {τ : Aty} → (ϕ : A-form b τ) → (A-form b τ)
 neg-Form-help : {b : Bool} → {τ : Aty} → (tes : Test (A-form b τ)) → Test (A-form b τ)
@@ -154,7 +153,7 @@ neg-Form-help (⋁ x) = ⋀ (λ i → neg-Form-help (x i))
 neg-Form-help (⋀ x) = ⋁ (λ i → neg-Form-help (x i))
 
 
--- double negation is strictly identity
+-- double negation is strict identity
 doub-eq-Log : {b : Bool} → {τ : Aty} → (ϕ : A-form b τ) → (neg-Form (neg-Form ϕ) ≡ ϕ)
 doub-eq-Log-help : {b : Bool} → {τ : Aty} → (tes : Test (A-form b τ)) → (neg-Form-help (neg-Form-help tes) ≡ tes)
 doub-eq-Log (bas-Nat n) = refl
@@ -176,7 +175,6 @@ doub-eq-Log-help (⋀ x) = cong ⋀ (funext (λ n → doub-eq-Log-help (x n)))
 
 
 -- negation is distinction
-
 dist-Log : {b : Bool} → {τ : Aty} → (ϕ : A-form b τ) → (P : A-term b τ)
   → (P ⊧ ϕ) → (P ⊧ (neg-Form ϕ)) → ⊥
 dist-Log (bas-Nat n) k kmn knegn = knegn kmn
@@ -198,11 +196,12 @@ dist-Log (clo-Form (⋁ x)) P (n , C) Pnegϕ = dist-Log (clo-Form (x n)) P C (Pn
 dist-Log (clo-Form (⋀ x)) P Pmϕ (n , C) = dist-Log (clo-Form (x n)) P (Pmϕ n) C
 
 
-
+-- Alternative stronger notion of logical equivalence
 Log-CL-Order : (a : Bool) → (τ : Aty) → (P Q : A-term a τ) → Set
 Log-CL-Order a τ P Q = (ϕ : A-form a τ) → ((P ⊧ neg-Form ϕ) ⊎ (Q ⊧ ϕ))
 
-CL-correct :  {a : Bool} → {τ : Aty} → (P Q : A-term a τ) → (Log-CL-Order a τ P Q) → (Log-Order a τ P Q)
+CL-correct :  {a : Bool} → {τ : Aty} → (P Q : A-term a τ)
+  → (Log-CL-Order a τ P Q) → (Log-Order a τ P Q)
 CL-correct P Q hypo ϕ x with (hypo ϕ)
 ... | inj₁ x₁ = ⊥-elim (dist-Log ϕ P x x₁)
 ... | inj₂ y = y

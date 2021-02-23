@@ -19,8 +19,10 @@ open add-skip BSig BAr
 
 
 -- ==============================================
---   BIT-TOGGLE, minimalist global store
+--   BIT-TOGGLE with skip, minimalist global store
 -- ==============================================
+
+-- Similar developement to standard bittoggle
 
 t-obs = Bool × Bool
 _↦_ : Bool → Bool → t-obs
@@ -128,9 +130,3 @@ t-up0lo-inv : (t-update left (leaf 0)) ◄ (t-update left (t-lookup (leaf 0) (le
 t-up0lo-inv P (left , left) (node-α (node-α (leaf-α x x₁))) = node-α (node-α (node-α (node-α (leaf-α refl x₁))))
 t-up0lo-inv P (right , left) (node-α (leaf-α x x₁)) = node-α (node-α (node-α (leaf-α refl x₁)))
 
--- -- Double update (unnecessarily long)
--- t-doubup : (a b : Bit) → (t-update a (t-update b (leaf 0))) ◄ (t-update b (leaf 0))
--- t-doubup left left P (left , .left) (node-α (node-α (node-α (node-α (leaf-α refl x₁))))) = node-α (node-α (leaf-α refl x₁))
--- t-doubup left left P (right , .left) (node-α (node-α (node-α (leaf-α refl x₁)))) = node-α (leaf-α refl x₁)
--- t-doubup left right P (c , d) x = {!!}
--- t-doubup right b P (c , d) x = {!!}

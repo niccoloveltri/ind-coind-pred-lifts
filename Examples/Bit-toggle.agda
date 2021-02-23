@@ -16,9 +16,9 @@ open import Trees-Coinductive
 open import Trees-Comp
 
 
--- ==============================================
---   BIT-TOGGLE, minimalist global store
--- ==============================================
+-- ===========================================================
+--   BIT-TOGGLE, the minimalist version of binary global store
+-- ===========================================================
 
 
 t-obs = Bit × Bit
@@ -57,7 +57,7 @@ toggle-11-even1 : liftTree pred-even t-11 (num-gen (suc zero))
 toggle-11-even1 = node-α (node-α (leaf-α refl (pe-ss zero pe-zero)))
 
 
--- Decomposable:
+-- Decomposability
 
 -- State transition composition
 t-strong : (a b c : Bit) → (r : DTree bI) → obsTower r (a ↦ b) (b ↦ c) → α (a ↦ c) (μTree r)
@@ -77,7 +77,7 @@ t-strong-inv left c (node _ ts) (node-α x) with t-strong-inv right c (force (ts
 t-strong-inv right c (node _ ts) (node-α x) with t-strong-inv left c (force (ts right)) x
 ... | fst , snd = fst , (node-α snd)
 
--- deco statement
+-- α-decomposition
 t-deco : deco
 t-deco (a , b) = (atom ((a ↦ left) , (left ↦ b))) ∨ (atom ((a ↦ right) , (right ↦ b)))
 
@@ -94,11 +94,8 @@ t-deco-α-unf (a , b) d x with t-strong-inv a b d x
 t-is-strong : Strong-Decomposable
 t-is-strong = deco-α-decomp t-deco t-deco-α-seq t-deco-α-unf
 
--- t-is-strong r r' pruf (a , c) assum with t-strong-inv a c r assum
--- ... | (b , tow) = t-strong a b c r' (pruf (a ↦ b) (b ↦ c) tow)
 
--- Coinductive
-
+-- β-decomposition
 t-deco' : deco
 t-deco' o = dualTest (t-deco o)
 
@@ -129,7 +126,7 @@ t-β-decomp : β-Strong-Decomposable
 t-β-decomp = deco-β-decomp t-deco' t-deco-β-seq t-deco-β-unf
 
 
--- Sugar
+-- Global store operations
 
 -- Flip the bit operation
 t-flip : {A : Set} (t : Tree (λ (_ : True) → Bit) A) → Tree (λ (_ : True) → Bit) A
@@ -142,8 +139,8 @@ t-update : {A : Set} (c : Bit) (t : Tree (λ (_ : True) → Bit) A) → Tree (λ
 t-update left t = node true (λ {left → record { force = t-flip t } ; right → record { force = t }})
 t-update right t = node true (λ {left → record { force = t } ; right → record { force = t-flip t }})
 
+
 -- Equations
--- open bin-equations t-obs t-leaf t-node
 
 -- Two flips is no flip
 t-double-flip1 : (t-flip (t-flip (leaf 0)) ◄ leaf 0)
@@ -161,10 +158,3 @@ t-up0lo P (right , left) (node-α (node-α (node-α (leaf-α x x₁)))) = node-�
 t-up0lo-inv : (t-update left (leaf 0)) ◄ (t-update left (t-lookup (leaf 0) (leaf 1)))
 t-up0lo-inv P (left , left) (node-α (node-α (leaf-α x x₁))) = node-α (node-α (node-α (node-α (leaf-α refl x₁))))
 t-up0lo-inv P (right , left) (node-α (leaf-α x x₁)) = node-α (node-α (node-α (leaf-α refl x₁)))
-
--- -- Double update (unnecessarily long)
--- t-doubup : (a b : Bit) → (t-update a (t-update b (leaf 0))) ◄ (t-update b (leaf 0))
--- t-doubup left left P (left , .left) (node-α (node-α (node-α (node-α (leaf-α refl x₁))))) = node-α (node-α (leaf-α refl x₁))
--- t-doubup left left P (right , .left) (node-α (node-α (node-α (leaf-α refl x₁)))) = node-α (leaf-α refl x₁)
--- t-doubup left right P (c , d) x = {!!}
--- t-doubup right b P (c , d) x = {!!}

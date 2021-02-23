@@ -14,6 +14,9 @@ open import Data.Unit
 open import Data.Nat hiding (_⊔_)
 open import Function hiding (_⟶_)
 
+
+-- A logic of behavioural properties, specifically for CBV-PCF
+
 open import Signatures
 open add-skip Sig ar
 open import Trees-Coinductive
@@ -30,7 +33,7 @@ open Languages.CBV-PCF Sig ar
 import Pred-Lift-ab
 open Pred-Lift-ab ar⊥ O α⊥l α⊥n
 
--- formulas (bas) (v/c) (type) (formula)
+-- Logic
 data Form : Bool → Ty → Set where
   bas-Nat : ℕ → (Form val N)
   bas-Fun : {τ σ : Ty} → (TVal τ) → (Form cpt σ)
@@ -38,7 +41,7 @@ data Form : Bool → Ty → Set where
   bas-Com : {τ : Ty} → O → (Form val τ) → (Form cpt τ)
   clo-Form : {a : Bool} → {τ : Ty} → Test (Form a τ) → Form a τ 
 
-
+-- Satisfaction
 infix 6 _⊧_
 _⊧_ : {b : Bool} → {τ : Ty} → (P : TTerm b τ) → (ϕ : Form b τ) → Set
 V ⊧ (bas-Fun W ϕ) = (app V W) ⊧ ϕ
@@ -56,13 +59,12 @@ Z ⊧ bas-Nat (suc x) = False
 (S V) ⊧ bas-Nat (suc x) = V ⊧ bas-Nat x
 
 
-
-
+-- Logical order
 Log-Order : {a : Bool} → {τ : Ty} → (P Q : TTerm a τ) → Set
 Log-Order P Q = (ϕ : Form _ _) → (P ⊧ ϕ) → (Q ⊧ ϕ)
 
 
-
+-- Relators and applcative similarity for CBV
 import Relators
 open Relators ar⊥ O α⊥l α⊥n
 
@@ -77,13 +79,16 @@ app-sim-loc R cpt τ P Q = O-Relator (R val τ) (Tdenot P) (Tdenot Q)
 app-sim-loc R val N P Q = wek (P ≡ Q)
 app-sim-loc R val (τ ⟶ σ) P Q = ∀(U : TTerm val τ) → wek (R cpt σ (app P U) (app Q U))
 
+-- Applicative simulation
 app-sim : (R : wtr) → Set₁
 app-sim R = ∀(a : Bool) → ∀(τ : Ty) → ∀(P Q : TTerm a τ)
   → (R a τ P Q) → app-sim-loc R a τ P Q
 
+-- Applicative similarity
 app-simil : (a : Bool) → (τ : Ty) → (P Q : TTerm a τ) → Set₁
 app-simil a τ P Q = Σ wtr (λ R → (app-sim R) × R a τ P Q)
 
+-- Applicative similarity implies logical order
 distinction : {a : Bool} → {τ : Ty} → (R : wtr) → (app-sim R) →
   (ϕ : Form a τ) → (P Q : TTerm a τ)
   → (R a τ P Q) → (P ⊧ ϕ) → (Q ⊧ ϕ)

@@ -8,18 +8,21 @@ open import Data.Bool
 open import Function
 open import Trees-Coinductive
 
+-- Some useful examples of signatures (containers)
+
 data True : Set where
   true : True
 
 data False : Set where
 
+-- Binary choice
 data BSig : Set where
   b-or : BSig
 Bit = Bool
 BAr : BSig → Set
 BAr b-or = Bool
 
--- extending signatures with skip operation
+-- Extending signatures with skip operation
 module add-skip (Sig : Set) (ar : Sig → Set) where
   Sig⊥ : Set
   Sig⊥ = Sig ⊎ ⊤

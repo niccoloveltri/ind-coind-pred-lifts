@@ -22,6 +22,7 @@ open import Trees-Coinductive
 --   O-INDEXED PREDICATE LIFTINGS (coinductive)
 -- ==============================================
 
+-- O-indexed coinductive algebras on coinductive trees
 mutual
   data β (i : Size) : O →  PTree I → Set where
     β-leaf : ∀ {P o} → P → β i o (leaf P)
@@ -37,19 +38,19 @@ mutual
 
 open β' public
 
--- β i o t → β j o t
-
+-- O-induced coinductive predicate lifting by β
 β-liftTree : ∀ {ℓ} {A : Set ℓ} → (A → Set) → O → Tree I A → Set
 β-liftTree' : ∀ {ℓ} {A : Set ℓ} → (A → Set) → O → Tree I A → Set
 β-liftTree P o t = β ∞ o (mapTree P t)
 β-liftTree' P o t = β' ∞ o (mapTree P t)
 
-
+-- Basic ordering induced by β
 _β⊏_ : PTree I → PTree I → Set
 t β⊏ t' = (o : O) → β ∞ o t → β ∞ o t'
 _β'⊏_ : PTree I → PTree I → Set
 t β'⊏ t' = (o : O) → β ∞ o t → β' ∞ o t'
 
+-- β is monotone as predicate lifting
 β-mono-help' : {A : Set} {k : K} (os : Test (I k × O)) (f g : A → Set)
   (ord : (a : A) → f a → g a) (ts : I k → Tree I A)
           (x : liftTest (uncurry (λ x₁ o' → β' ∞ o' (mapTree f (ts x₁)))) (os))
@@ -73,13 +74,17 @@ t β'⊏ t' = (o : O) → β ∞ o t → β' ∞ o t'
 β-mono-help' (⋁ x) f g ord ts (n , C) = n , (β-mono-help' (x n) f g ord ts C)
 β-mono-help' (⋀ x) f g ord ts left = λ n → β-mono-help' (x n) f g ord ts (left n)
 
--- Towers
 
+-- ===================================================================
+-- Studying higher order programs with β: preservation over sequencing
+
+-- Double observations given by β
 β-obsTower : DTree I → O → O → Set
 β-obsTower r o o' = β ∞ o (mapTree (β ∞ o') r)
 β-obsTower' : DTree I → O → O → Set
 β-obsTower' r o o' = β' ∞ o (mapTree (β ∞ o') r)
 
+-- Basic β ordering on double trees
 _β⊂_ : DTree I → DTree I → Set
 r β⊂ r' = (o : O) (os : Test O)
   → β ∞ o (mapTree (λ t → liftTest (λ o' → β ∞ o' t) os) r)
@@ -89,8 +94,7 @@ r β'⊂ r' = (o : O) (os : Test O)
   → β ∞ o (mapTree (λ t → liftTest (λ o' → β ∞ o' t) os) r)
   → β' ∞ o (mapTree (λ t → liftTest (λ o' → β ∞ o' t) os) r')
 
--- Decomposable
-
+-- Notion of decomposability for β: preservation over sequencing
 β-Decomposable : Set₁
 β-Decomposable =
   (r r' : DTree I) → (r β⊂ r') → ((μTree r) β⊏ (μTree r'))
@@ -99,6 +103,7 @@ r β'⊂ r' = (o : O) (os : Test O)
   β-obsTower r o o' → β-obsTower r' o o'
 β-gen-to-tower r r' hypo o o' assum = hypo o (atom o') assum
 
+-- Strong decomposability for β
 β-Strong-Decomposable : Set₁
 β-Strong-Decomposable =
   (r r' : DTree I)
@@ -109,6 +114,8 @@ r β'⊂ r' = (o : O) (os : Test O)
 β-Strong-to-Normal hypo
   r r' x o x₁ = hypo r r' (β-gen-to-tower r r' x) o x₁
 
+
+-- Explicit β-decomposition
 deco' : Set
 deco' = O → Test (O × O)
 
@@ -117,6 +124,7 @@ deco-β πd o d = liftTest (λ x → β-obsTower d (proj₁ x) (proj₂ x)) (πd
 deco-β' : deco' → O → DTree I → Set
 deco-β' πd o d = liftTest (λ x → β-obsTower' d (proj₁ x) (proj₂ x)) (πd o)
 
+-- Two properties showing that πd is a β-decomposition
 deco-β-seq : deco' → Set₁
 deco-β-seq' : deco' → Set₁
 deco-β-seq πd = (o : O) → (d : DTree I) → (deco-β πd o d) → (β ∞ o (μTree d))
@@ -127,6 +135,7 @@ deco-β-unf' : deco' → Set₁
 deco-β-unf πd = (o : O) → (d : DTree I)  → (β ∞ o (μTree d)) → (deco-β πd o d)
 deco-β-unf' πd = (o : O) → (d : DTree I)  → (β ∞ o (μTree d)) → (deco-β' πd o d)
 
+-- β-decompositions imply strong decomposability
 deco-β-decomp : (πd : deco') → (deco-β-seq πd) → (deco-β-unf πd)
   → β-Strong-Decomposable
 deco-β-decomp πd rig lef d₁ d₂ d₁-d₂ o d₁-o = rig o d₂

@@ -16,19 +16,20 @@ open import Function
 open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Size
 
+
+-- ====================================================
+--   BOTH INDUCTIVE AND COINDUCTIVE PREDICATIVE LIFTING
+-- ====================================================
+
+-- Importing both inductive and coinductive predicate liftings
 open import Trees-Coinductive
 import Pred-Lift-a
 open Pred-Lift-a I O πl πn   public
 import Pred-Lift-b
 open Pred-Lift-b I O πl πn   public
 
--- ==============================================
---   BOTH INDUCTIVE AND COINDUCTIVE PREDICATIVE LIFTING
--- ==============================================
 
-
--- Distinction result
-
+-- Distinction result: distinct predicates are lifted to distinct predicate on trees
 dist-αβ : {A : Set} → (P Q : A → Set) → ((a : A) → (P a) → (Q a) → ⊥)
   → (t : Tree I A) → (o : O)
   → (β-liftTree Q o t)

@@ -58,7 +58,7 @@ may-diverge' : (n : ℕ) → β-liftTree' (λ x → ⊥) must (num-gen n)
 may-diverge n = β-node (inj₂ (may-diverge' (suc n)))
 β-force (may-diverge' n) = may-diverge n 
 
--- Decomposable:
+-- Decomposability
 
 -- may may => may
 strong-may : (r : DTree ar⊥) → obsTower r may may → α may (μTree r)
@@ -142,10 +142,9 @@ must-imp-imay (node (inj₂ tt) ts) (node-α x) = β-node (must-imp-imay' (force
 
 must-imp-imust : (t : PTree ar⊥) → (α must t) → (β ∞ must t)
 must-imp-imust t hypo = imay-imp-imust t (must-imp-imay t hypo)
--- must-imp-imust t hypo = may-imp-imust t (must-imp-may t hypo)
 
 
--- Equations (weird stuff when layering though...)
+-- Equations 
 open bin-equations-skip n-obs n-leaf n-node
 
 n-is-idem1 : idempotency1
@@ -167,7 +166,6 @@ n-is-assoc1 P may (node-α (inj₁ (node-α (inj₁ x)))) = node-α (inj₁ x)
 n-is-assoc1 P may (node-α (inj₁ (node-α (inj₂ y)))) = node-α (inj₂ (node-α (inj₁ y)))
 n-is-assoc1 P may (node-α (inj₂ z)) = node-α (inj₂ (node-α (inj₂ z)))
 n-is-assoc1 P must (node-α (node-α (x , y) , z)) = node-α (x , node-α (y , z))
--- associativity 2 is very similar, plus derivable from symmetry and associativity 1
 
 pribbles = V-subs (Strong-to-Normal n-is-strong) n-is-sym (λ n → leaf (pred-even n))
 
@@ -179,6 +177,8 @@ nat-even (suc n) = nat-odd n
 nat-odd zero = false
 nat-odd (suc n) = nat-even n
 
+
+-- Drunken walk example
 tree-drunk : {i : Size} → ℕ → STree BST-arit ℕ i
 tree-drunk' : {i : Size} → ℕ → STree' BST-arit ℕ i
 tree-drunk zero = leaf zero
@@ -197,7 +197,6 @@ may-fall-form = clo-Form (⋀ (λ k →
 drunk-may-fall : tree-drunk-typed ⊧ may-fall-form
 drunk-may-fall zero = leaf-α refl tt
 drunk-may-fall (suc n) = node-α (inj₁ (drunk-may-fall n))
-
 
 drunk-may-wander : ∀ (n : ℕ) → β-liftTree (λ n → ⊥) must
   (tree-drunk (suc n))
@@ -226,18 +225,4 @@ drunk-falls-evenly-form : tree-drunk-typed ⊧ fall-evenly
 drunk-falls-evenly-form n = β-monotone N-even (λ V → V ⊧ even-Form)
   even-equiv-l (tree-drunk (N-twice n)) may (drunk-falls-evenly (N-twice n) (N-twice-even n))
 
---   Pred-Lift.β-node
---     ((record { β-force = Pred-Lift.β-node (
---       (drunk-falls-evenly' fst ?) ,
---       (drunk-falls-evenly' (suc (suc fst)) ?)) }) ,
---     record { β-force = Pred-Lift.β-node (
---       (drunk-falls-evenly' (suc (suc fst)) ?) ,
---       (drunk-falls-evenly' (suc (suc (suc (suc fst)))) (pe-ss ? ?))) }
---     )
--- β-force (drunk-falls-evenly' n neven) = drunk-falls-evenly n neven
-     
--- -- drunk-falls-evenly-form : tree-drunk-typed ⊧ fall-evenly
--- -- drunk-falls-evenly-form' : (n : ℕ)
--- --   → β-liftTree (λ V → Σ ℕ (λ n₁ → V ≡ nat-twice n₁)) may
--- --       (tree-drunk-typed (nat-twice n))
--- -- drunk-falls-evenly-form n = {!!}
+

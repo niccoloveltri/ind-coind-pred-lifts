@@ -34,10 +34,7 @@ import Pred-Lift-ab
 open Pred-Lift-ab uI u-obs u-leaf u-node
 
 
--- -- Decomposable:
-
-
--- deco formulation
+-- α-decomposition
 u-deco : deco
 u-deco ter = atom (ter , ter)
 
@@ -47,12 +44,12 @@ u-deco-α-seq ter (leaf x₁) (leaf-α x x₂) = x₂
 u-deco-α-unf : (deco-α-unf u-deco)
 u-deco-α-unf ter (leaf .(leaf _)) (leaf-α x x₁) = leaf-α refl (leaf-α refl x₁)
 
--- PROPOSITION:  may+must nondeterminism is strong decomposable
+-- α-Decomposability
 u-is-strong : Strong-Decomposable
 u-is-strong = deco-α-decomp u-deco u-deco-α-seq u-deco-α-unf
 
 
--- Coinductive
+-- β-decomposition
 u-deco' : deco
 u-deco' o = dualTest (u-deco o)
 
@@ -66,5 +63,6 @@ u-deco-β-unf' : deco-β-unf' u-deco'
 u-deco-β-unf ter (leaf x) hypo = β-leaf hypo
 β-force (u-deco-β-unf' ter d hypo) = u-deco-β-unf ter d hypo
 
+-- β-decomposability
 u-β-decomp : β-Strong-Decomposable
 u-β-decomp = deco-β-decomp u-deco' u-deco-β-seq u-deco-β-unf

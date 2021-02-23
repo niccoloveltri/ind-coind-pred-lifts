@@ -107,8 +107,7 @@ i-strong-ope-inv (AppendBL x s) v (node _ ts) (node-α x₁) with i-strong-ope-i
 ... | inj₂ (m , n , e , hypo) = inj₂ ((AppendBL x m) , (n , ((cong (λ y → AppendBL x y) e) , (node-α hypo))))
 
 
--- deco
-
+-- α-decomposition
 i-deco : deco
 i-deco (left , σ) = ⋁ (λ n → ⋁ (λ m → if EqBL (ConcatBL (toList n) (toList m)) σ
   then atom ((left , (toList n)) , (left , (toList m))) else false))
@@ -185,7 +184,7 @@ i-deco-α-unf (right , bl) d x with i-strong-ope-inv bl bl d x
 i-is-strong : Strong-Decomposable
 i-is-strong = deco-α-decomp i-deco i-deco-α-seq i-deco-α-unf
 
--- β deco
+-- β-decomposition
 
 i-deco' : deco
 i-deco' o = dualTest (i-deco o)
@@ -299,16 +298,4 @@ proj₂ (i-deco-β-unf (right , s) d p) n m with EqBL (ConcatBL (toList n) (toLi
 
 n-β-decomp : β-Strong-Decomposable
 n-β-decomp = deco-β-decomp i-deco' i-deco-β-seq i-deco-β-unf
-
-
--- -- PROPOSITION: input toggle is Strong-Decomposable
--- i-is-strong : Strong-Decomposable
--- i-is-strong r r' pruf (left , s) assum with i-strong-clo-inv s r assum
--- ... | m , n , e , hypo with i-strong-clo m (clo n) r' (pruf (clo m) (clo n) hypo)
--- ... | z = subst (λ y → (α (left , y) (μTree r'))) e z
--- i-is-strong r r' pruf (right , s) assum with i-strong-ope-inv s r assum
--- ... | inj₁ x = i-strong-ope s i-obs-ph r' (pruf (ope s) i-obs-ph x)
--- ... | inj₂ (m , n , e , hypo) with i-strong-clo m (ope n) r' (pruf (clo m) (ope n) hypo)
--- ... | z = subst (λ y → (α (right , y) (μTree r'))) e z
-
 

@@ -39,6 +39,7 @@ data pred-even : ℕ → Set where
   pe-zero : pred-even zero
   pe-ss : (n : ℕ) → pred-even n → pred-even (suc (suc n))
 
+-- Equations for binary trees with skips
 module bin-equations-skip (O : Set) (αl : O → Bool)
                  (αn : (k : BST-nodes) → O → Test ((BST-arit k) × O)) where
 

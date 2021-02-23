@@ -54,7 +54,7 @@ g-id : (n : ℕ) → g-leaf (n , n) ≡ true
 g-id zero = refl
 g-id (suc n) = g-id n
 
--- deco statement
+-- α-decomposition
 g-deco : deco
 g-deco (n , m) = ⋁ (λ k → atom ((n , k) , (k , m)))
 
@@ -81,7 +81,7 @@ g-is-strong = deco-α-decomp g-deco g-deco-α-seq g-deco-α-unf
 
 
 
--- Coinductive
+-- β-decomposition
 g-deco' : deco
 g-deco' o = dualTest (g-deco o)
 
@@ -123,6 +123,7 @@ g-deco-β-unf (n , m) (node (update x) ts) (β-node x₁) k =
   β-node (g-deco-β-unf' (x , m) (force (ts tt)) (β-force x₁) k)
 β-force (g-deco-β-unf' o d assum k) = g-deco-β-unf o d assum k
 
+-- Global store is strong decomposable for β
 g-β-decomp : β-Strong-Decomposable
 g-β-decomp = deco-β-decomp g-deco' g-deco-β-seq g-deco-β-unf
 

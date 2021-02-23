@@ -37,7 +37,7 @@ import Logic
 open Logic bI n-obs n-leaf n-node
 
 
--- Decomposable:
+-- Decomposability: Helpful lemmas
 
 -- may may => may
 strong-may : (r : DTree bI) → obsTower r may may → α may (μTree r)
@@ -61,7 +61,7 @@ strong-must-inv : (r : DTree bI) → α must (μTree r) → obsTower r must must
 strong-must-inv (leaf x) pruf = leaf-α refl pruf
 strong-must-inv (node _ ts) (node-α (fst , snd)) = node-α ((strong-must-inv (force (ts left)) fst) , (strong-must-inv (force (ts right)) snd))
 
--- deco formulation
+-- α-decomposition
 n-deco : deco
 n-deco may = atom (may , may)
 n-deco must = atom (must , must)
@@ -79,7 +79,7 @@ n-is-strong : Strong-Decomposable
 n-is-strong = deco-α-decomp n-deco n-deco-α-seq n-deco-α-unf
 
 
--- Coinductive
+-- β-decomposition
 n-deco' : deco
 n-deco' o = dualTest (n-deco o)
 
@@ -110,15 +110,13 @@ n-deco-β-unf must (node k ts) (β-node (inj₂ y)) = β-node (
 β-force (n-deco-β-unf' may d hypo) = n-deco-β-unf may d hypo
 β-force (n-deco-β-unf' must d hypo) = n-deco-β-unf must d hypo
 
+-- Nondeterminism is strong decomposable for β
 n-β-decomp : β-Strong-Decomposable
 n-β-decomp = deco-β-decomp n-deco' n-deco-β-seq n-deco-β-unf
 
 
--- n-is-strong r r' pruf may assum = strong-may r' (pruf may may (strong-may-inv r assum))
--- n-is-strong r r' pruf must assum = strong-must r' (pruf must must (strong-must-inv r assum))
 
-
--- Equations (weird stuff when layering though...)
+-- Equations for nondeterminism
 open bin-equations n-obs n-leaf n-node
 
 n-is-idem1 : idempotency1
@@ -140,28 +138,11 @@ n-is-assoc1 P may (node-α (inj₁ (node-α (inj₁ x)))) = node-α (inj₁ x)
 n-is-assoc1 P may (node-α (inj₁ (node-α (inj₂ y)))) = node-α (inj₂ (node-α (inj₁ y)))
 n-is-assoc1 P may (node-α (inj₂ z)) = node-α (inj₂ (node-α (inj₂ z)))
 n-is-assoc1 P must (node-α (node-α (x , y) , z)) = node-α (x , node-α (y , z))
--- associativity 2 is very similar, plus derivable from symmetry and associativity 1
-
-pribbles = V-subs (Strong-to-Normal n-is-strong) n-is-sym (λ n → leaf (pred-even n))
-
-
--- doufo time
-
--- non-douf : doufo
--- non-douf o = atom (o , o)
-
--- non-douf-r : doufo-α-r non-douf
--- non-douf-l : doufo-α-l non-douf
--- non-douf-r o (leaf t) (leaf-α refl t-o) = t-o
--- non-douf-r o (node true ts) (Pred-Lift.node-α x) =
---   {!liftfunTest _ (uncurry (λ x₁ o' → α o' (mapTree (α o) (force (ts x₁)))))!}
--- non-douf-l o d μd-o = {!!}
 
 
 -- EXAMPLE COMPUTATIONS
 
 -- Always diverging element Omega
-
 n-Omega : (τ : Aty) → (A-cpt τ)
 n-Omega' : (τ : Aty) → (A-cpt' τ)
 n-Omega τ = node true (λ x → n-Omega' τ)
@@ -176,7 +157,6 @@ Omega-diverges τ must ϕ = β-node (inj₁ (Omega-diverges' τ must ϕ))
 β-force (Omega-diverges' τ o ϕ) = Omega-diverges τ o ϕ
 
 -- Returning zero, or terminating
-
 bitBool : Bit → Bool
 bitBool left = true
 bitBool right = false

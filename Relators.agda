@@ -21,6 +21,7 @@ open import Pred-Lift-ab I O αl αn
 open import Trees-Coinductive
 
 
+-- Relator properties
 rel-idin : ∀ {i} {A : Set} (R : A → A → Set i) → Set i
 rel-idin R = (a : _) → R a a
 
@@ -32,10 +33,6 @@ rel-ord R S = (a : _) → (b : _) → (R a b) → (S a b)
 
 rel-tran : ∀ {i} {A : Set} (R : A → A → Set i) → Set i
 rel-tran R = rel-ord (rel-comp R R) R
-
--- ==============================================
---   Help
--- ==============================================
 
 rel-preds : ∀ {i j} {A : Set} {B : Set} (R : A → B → Set i) → (P : A → Set j) → (Q : B → Set j) → Set (i ⊔ j)
 rel-preds R P Q = (a : _) → (b : _) → (P a) → (R a b) → (Q b)
@@ -74,8 +71,7 @@ Relator-comp R S ta tc (tb , taORtb , tbOStc) P Q P-RS-Q o taMoP = tbOStc (Right
 Relator-tran : {A : Set} (R : A → A → Set) → (rel-tran R) → rel-tran (O-Relator R)
 Relator-tran R R-tran ta tc x = Relator-mono (rel-comp R R) R R-tran ta tc (Relator-comp R R ta tc x)
 
-
-
+-- Preservation over sequencing
 Relator-μ : ∀ {i} {A B : Set} → Decomposable → (R : A → B → Set i) → (d₁ : Tree I (Tree I A)) → (d₂ : Tree I (Tree I B))
           →  O-Relator (O-Relator R) d₁ d₂ → O-Relator R (μTree d₁) (μTree d₂)
 Relator-μ decom R da db daOORdb P Q P-R-Q o μdaMoP = subst (λ x → α o x) (sym (μ-natural Q db))

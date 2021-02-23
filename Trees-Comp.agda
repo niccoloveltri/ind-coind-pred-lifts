@@ -27,10 +27,12 @@ data Bit : Set where
   left : Bit
   right : Bit
 
+-- Natural number generator
 num-gen : {i : Size} →  ℕ → STree (λ (_ : True) → Bit) ℕ i
 num-gen' : {i : Size} → ℕ → STree' (λ _ → Bit) ℕ i
 
-num-gen n = node true (λ { left → record { force = λ { {j} → leaf n } } ; right → num-gen' (suc n) })
+num-gen n = node true (λ { left → record { force = λ { {j} → leaf n } } ; right →
+  num-gen' (suc n) })
 
 force (num-gen' n) = num-gen n
 
@@ -38,6 +40,7 @@ data pred-even : ℕ → Set where
   pe-zero : pred-even zero
   pe-ss : (n : ℕ) → pred-even n → pred-even (suc (suc n))
 
+-- Equations for binary decision trees
 module bin-equations (O : Set) (αl : O → Bool)
                  (αn : True → O → Test (Bit × O)) where
 
@@ -47,6 +50,7 @@ module bin-equations (O : Set) (αl : O → Bool)
   import Pred-Lift-ab
   open Pred-Lift-ab bI O αl αn
 
+  -- some basic variable expressions
   g-x : VTree bI
   g-x = leaf 0
   g-oxx : VTree bI
@@ -62,9 +66,14 @@ module bin-equations (O : Set) (αl : O → Bool)
   g-oxoyz : VTree bI
   g-oxoyz = node true (λ {left → record { force = leaf 0} ; right → record { force = g-oyz }})
 
+  -- The equation for idempotency
   idempotency1 = (g-x ◄ g-oxx)
   idempotency2 = (g-oxx ◄ g-x)
+
+  -- The equation for symmetry
   symmetry = (g-oxy ◄ g-oyx)
+
+  -- The equations for associativity
   associativity1 = (g-ooxyz ◄ g-oxoyz) 
   associativity2 = (g-oxoyz ◄ g-ooxyz)
 

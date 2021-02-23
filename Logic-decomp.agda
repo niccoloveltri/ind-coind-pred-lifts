@@ -3,8 +3,8 @@ open import Data.Product renaming (map to map×)
 open import Data.Bool
 
 module Logic-decomp {Sig : Set} (ar : Sig → Set)
-             (O : Set) (αl : O → Bool)
-             (αn : (k : Sig) → O → Test (ar k × O)) where
+             (O : Set) (πl : O → Bool)
+             (πn : (k : Sig) → O → Test (ar k × O)) where
 
 open import Relation.Binary.PropositionalEquality
 open import Data.Sum renaming (map to map⊎)
@@ -18,17 +18,19 @@ open import Size
 open import Signatures
 open import Trees-Coinductive
 
+-- =======================================================
+-- Sequencing results for the logic, using decomposability
+-- =======================================================
 
 import Logic
-open Logic ar O αl αn public
+open Logic ar O πl πn public
 
 
-
--- sequencing
-
+-- Sequencing programs: the immediate termination of returned programs 
 ty-seq : {τ : Aty} → A-cpt (U τ) → A-cpt τ
 ty-seq M = μTree M
 
+-- Decomposability preserved the logical order over the sequencing operation
 ty-seq-preserve : {τ : Aty} → Decomposable → β-Decomposable
   → (P R : A-cpt (U τ)) → Log-Order cpt (U τ) P R → Log-Order cpt τ (ty-seq P) (ty-seq R)
 ty-seq-preserve α-dec β-dec P R P<R (bas-Comα o ϕ) μPmϕ =
@@ -41,7 +43,6 @@ ty-seq-preserve α-dec β-dec P R P<R (bas-Comα o ϕ) μPmϕ =
            (λ a x₁ → subst (λ z → z) (sym (liftnatTest (λ o₂ → bas-Comα o₂ ϕ) (_⊧_ a) os))
            (subst (λ z → z) (sym (clo-Form-eq (functorTest (λ o₂ → bas-Comα o₂ ϕ) os) a))
            x₁))
--- subst (λ z → z) (sym (clo-Form-eq (functorTest (λ o₂ → bas-Comα o₂ ϕ) os) a))
         R o₁ (P<R (bas-Comα o₁ (bas-Thu (clo-Form (functorTest (λ o₁ → bas-Comα o₁ ϕ) os))))
         (monotone (λ x₁ → liftTest (λ o' → α o' (mapTree (λ V → V ⊧ ϕ) x₁)) os)
          (λ x₁ → x₁ ⊧ bas-Thu (clo-Form (functorTest (λ o₁ → bas-Comα o₁ ϕ) os)))
@@ -63,7 +64,6 @@ ty-seq-preserve α-dec β-dec P R P<R (bas-Comβ o ϕ) μPmϕ =
            (λ a x₁ → subst (λ z → z) (sym (liftnatTest (λ o₂ → bas-Comβ o₂ ϕ) (_⊧_ a) os))
            (subst (λ z → z) (sym (clo-Form-eq (functorTest (λ o₂ → bas-Comβ o₂ ϕ) os) a))
            x₁))
--- subst (λ z → z) (sym (clo-Form-eq (functorTest (λ o₂ → bas-Comα o₂ ϕ) os) a))
         R o₁ (P<R (bas-Comβ o₁ (bas-Thu (clo-Form (functorTest (λ o₁ → bas-Comβ o₁ ϕ) os))))
         (β-monotone (λ x₁ → liftTest (λ o' → β ∞ o' (mapTree (λ V → V ⊧ ϕ) x₁)) os)
          (λ x₁ → x₁ ⊧ bas-Thu (clo-Form (functorTest (λ o₁ → bas-Comβ o₁ ϕ) os)))
@@ -90,21 +90,19 @@ ty-seq-preserve α-dec β-dec P R P<R (clo-Form (⋁ x)) (n , μPmϕ) =
 ty-seq-preserve α-dec β-dec P R P<R (clo-Form (⋀ x)) μPmϕ =
   λ n →  ty-seq-preserve α-dec β-dec P R P<R (clo-Form (x n)) (μPmϕ n)
 
--- consequences of decomposability
 
-ty-compose : {τ σ ρ : Aty} → A-val (τ ⇒ σ) → A-val (σ ⇒ ρ) → A-val (τ ⇒ ρ)
-ty-compose f g x = KleisTree g (f x)
-
+-- Let-binding
 ty-let : {τ σ : Aty} → A-cpt τ → A-val (τ ⇒ σ) → A-cpt σ
 ty-let M V = KleisTree V M
 
+-- Uncurrying and Currying functions
 ty-uncurry : {τ₀ τ₁ ρ : Aty} → A-val (τ₀ ⇒ (τ₁ ⇒ ρ)) → A-val ((τ₀ ⊗ τ₁) ⇒ ρ)
 ty-uncurry f (V , W) = ty-let (f V) (λ g → g W)
 
 ty-curry : {τ₀ τ₁ ρ : Aty} → A-val ((τ₀ ⊗ τ₁) ⇒ ρ) → A-val (τ₀ ⇒ (τ₁ ⇒ ρ))
 ty-curry f V = leaf (λ W → f (V , W))
 
-
+-- Decomposability implies preservation of logical order over the Uncurrying operation
 uncurry-preserve : {τ₀ τ₁ ρ : Aty} → Decomposable → β-Decomposable
   → (f g : A-val (τ₀ ⇒ (τ₁ ⇒ ρ)))
   → Log-Order val (τ₀ ⇒ (τ₁ ⇒ ρ)) f g
@@ -122,7 +120,6 @@ uncurry-preserve decom β-decom f g assum (bas-Fun (V , W) (bas-Comα x ϕ)) hyp
            (sym (funext (λ x₁ → clo-Form-eq2 os (λ o' → bas-Comα o' ϕ) (x₁ W))))
            (assum (bas-Fun V (bas-Comα o
                   (bas-Fun W (clo-Form (functorTest (λ z → bas-Comα z ϕ) os)))))
--- and now, let's go back
         (subst (λ z → α o (mapTree z (f V)))
            (funext (λ x₁ → clo-Form-eq2 os (λ o' → bas-Comα o' ϕ) (x₁ W)))
         (subst (λ z → α o z)
@@ -131,25 +128,8 @@ uncurry-preserve decom β-decom f g assum (bas-Fun (V , W) (bas-Comα x ϕ)) hyp
            hyp)))))
      x
      (subst (λ z → α x (μTree z))
-       (functTree (λ g₁ → g₁ W) (mapTree (λ V₁ → V₁ ⊧ ϕ)) (f V))
-       (subst (λ z → α x z) (μ-natural (λ V₁ → V₁ ⊧ ϕ) (mapTree (λ g₁ → g₁ W) (f V))) hypo))))
--- Old Strong-Decomposable version of the above case
--- uncurry-preserve decom β-decom f g assum (bas-Fun (V , W) (bas-Comα x ϕ)) hypo =
---   subst (λ z → α x z) (sym (μ-natural (λ V₁ → V₁ ⊧ ϕ) (mapTree (λ g₁ → g₁ W) (g V))))
---   (subst (λ z → α x (μTree z))
---      (sym (functTree (λ g₁ → g₁ W) (mapTree (λ V₁ → V₁ ⊧ ϕ)) (g V)))
---   (decom (mapTree (λ x₁ → mapTree (λ V₁ → V₁ ⊧ ϕ) (x₁ W)) (f V))
---      (mapTree (λ x₁ → mapTree (λ V₁ → V₁ ⊧ ϕ) (x₁ W)) (g V))
---      (λ o o' x₁ → subst (λ z → α o z)
---        (sym (functTree (λ x₂ → mapTree (λ V₁ → V₁ ⊧ ϕ) (x₂ W)) (α o') (g V)))
---        (assum (bas-Fun V (bas-Comα o (bas-Fun W (bas-Comα o' ϕ))))
---          (subst (λ z → α o z)
---            (functTree (λ x₂ → mapTree (λ V₁ → V₁ ⊧ ϕ) (x₂ W)) (α o') (f V)) x₁)))
---      x
---      (subst (λ z → α x (μTree z))
---        (functTree (λ g₁ → g₁ W) (mapTree (λ V₁ → V₁ ⊧ ϕ)) (f V))
---        (subst (λ z → α x z) (μ-natural (λ V₁ → V₁ ⊧ ϕ) (mapTree (λ g₁ → g₁ W) (f V))) hypo))
---   ))
+     (functTree (λ g₁ → g₁ W) (mapTree (λ V₁ → V₁ ⊧ ϕ)) (f V))
+     (subst (λ z → α x z) (μ-natural (λ V₁ → V₁ ⊧ ϕ) (mapTree (λ g₁ → g₁ W) (f V))) hypo))))
 uncurry-preserve decom β-decom f g assum (bas-Fun (V , W) (bas-Comβ x ϕ)) hypo =
   subst (λ z → β ∞ x z) (sym (μ-natural (λ V₁ → V₁ ⊧ ϕ) (mapTree (λ g₁ → g₁ W) (g V))))
   (subst (λ z → β ∞ x (μTree z))
@@ -163,33 +143,16 @@ uncurry-preserve decom β-decom f g assum (bas-Fun (V , W) (bas-Comβ x ϕ)) hyp
            (sym (funext (λ x₁ → clo-Form-eq2 os (λ o' → bas-Comβ o' ϕ) (x₁ W))))
            (assum (bas-Fun V (bas-Comβ o
                   (bas-Fun W (clo-Form (functorTest (λ z → bas-Comβ z ϕ) os)))))
--- and now, let's go back
         (subst (λ z → β ∞ o (mapTree z (f V)))
            (funext (λ x₁ → clo-Form-eq2 os (λ o' → bas-Comβ o' ϕ) (x₁ W)))
         (subst (λ z → β ∞ o z)
            (functTree (λ x₁ → mapTree (λ V₁ → V₁ ⊧ ϕ) (x₁ W))
             (λ t → liftTest (λ o' → β ∞ o' t) os) (f V))
            hyp)))))
-     x
-     (subst (λ z → β ∞ x (μTree z))
-       (functTree (λ g₁ → g₁ W) (mapTree (λ V₁ → V₁ ⊧ ϕ)) (f V))
-       (subst (λ z → β ∞ x z) (μ-natural (λ V₁ → V₁ ⊧ ϕ) (mapTree (λ g₁ → g₁ W) (f V))) hypo))))
--- Old Strong-Decomposable version of the above case
--- uncurry-preserve decom β-decom f g assum (bas-Fun (V , W) (bas-Comβ x ϕ)) hypo =
---   subst (λ z → β ∞ x z) (sym (μ-natural (λ V₁ → V₁ ⊧ ϕ) (mapTree (λ g₁ → g₁ W) (g V))))
---   (subst (λ z → β ∞ x (μTree z))
---      (sym (functTree (λ g₁ → g₁ W) (mapTree (λ V₁ → V₁ ⊧ ϕ)) (g V)))
---   (β-decom (mapTree (λ x₁ → mapTree (λ V₁ → V₁ ⊧ ϕ) (x₁ W)) (f V))
---      (mapTree (λ x₁ → mapTree (λ V₁ → V₁ ⊧ ϕ) (x₁ W)) (g V))
---      (λ o o' x₁ → subst (λ z → β ∞ o z)
---      (sym (functTree (λ x₂ → mapTree (λ V₁ → V₁ ⊧ ϕ) (x₂ W)) (β ∞ o') (g V)))
---      (assum (bas-Fun V (bas-Comβ o (bas-Fun W (bas-Comβ o' ϕ))))
---      (subst (λ z → β ∞ o z)
---      (functTree (λ x₂ → mapTree (λ V₁ → V₁ ⊧ ϕ) (x₂ W)) (β ∞ o') (f V)) x₁)))
---         x (subst (λ z → β ∞ x (μTree z))
---      (functTree (λ g₁ → g₁ W) (mapTree (λ V₁ → V₁ ⊧ ϕ)) (f V))
---      (subst (λ z → β ∞ x z) (μ-natural (λ V₁ → V₁ ⊧ ϕ) (mapTree (λ g₁ → g₁ W)
---        (f V))) hypo))))
+    x
+    (subst (λ z → β ∞ x (μTree z))
+    (functTree (λ g₁ → g₁ W) (mapTree (λ V₁ → V₁ ⊧ ϕ)) (f V))
+    (subst (λ z → β ∞ x z) (μ-natural (λ V₁ → V₁ ⊧ ϕ) (mapTree (λ g₁ → g₁ W) (f V))) hypo))))
 uncurry-preserve decom β-decom f g assum (bas-Fun V (clo-Form (atom x))) hypo =
   uncurry-preserve decom β-decom f g assum (bas-Fun V x) hypo
 uncurry-preserve decom β-decom f g assum (bas-Fun V (clo-Form (x ∨ x₁))) (inj₁ a) =
@@ -219,19 +182,18 @@ uncurry-preserve decom β-decom f g assum (clo-Form (⋁ x)) (n , hypo) =
 uncurry-preserve decom β-decom f g assum (clo-Form (⋀ x)) hypo n =
   uncurry-preserve decom β-decom f g assum (clo-Form (x n)) (hypo n)
 
+-- Helpful lemmas
 boolC : (b : Bool) → (b ≡ true) ⊎ (b ≡ false)
 boolC cpt = inj₂ refl
 boolC val = inj₁ refl
 
-
-
 β-leaf-help : {τ : Aty} → (V : A-val τ) → (o : O) → (ϕ : A-form val τ)
-  → (leaf V ⊧ bas-Comβ o ϕ) → (αl o ≡ true) → (V ⊧ ϕ)
+  → (leaf V ⊧ bas-Comβ o ϕ) → (πl o ≡ true) → (V ⊧ ϕ)
 β-leaf-help V o ϕ (β-leaf x) no = x
 β-leaf-help V o ϕ (β-exep x) no with subst (λ z → (z ≡ false)) no x
 ... | ()
 
--- A lemma to reduce cases in the next one (in the end this didn't work anyway)
+-- Function formulas distribute over test-formulas
 bas-Fun-Clo-com : {σ τ : Aty} → (V : A-val (σ ⇒ τ))
   → (W : A-val σ) → (tes : Test (A-form cpt τ))
   → (V ⊧ clo-Form (functorTest (λ ϕ → bas-Fun W ϕ) tes))
@@ -259,22 +221,20 @@ bas-Fun-Clo-com2 V W (⋁ x) (n , assum) = n , bas-Fun-Clo-com2 V W (x n) assum
 bas-Fun-Clo-com2 V W (⋀ x) assum = λ n → bas-Fun-Clo-com2 V W (x n) (assum n)
 
 
-
-program-sequence : {τ : Aty} (M : A-cpt (U τ)) → A-cpt τ
-program-sequence M = μTree M
-
+-- α-decomposition for describing formulas for arbitrary types
 decoα-Form : {τ : Aty} → (πd : deco) → (o : O) → (ϕ : A-form val τ) → (A-form cpt (U τ))
 decoα-Form πd o ϕ = clo-Form
   (functorTest (λ p → bas-Comα (proj₁ p) (bas-Thu (bas-Comα (proj₂ p) ϕ))) (πd o))
 
+-- β-decomposition for describing formulas for arbitrary types
 decoβ-Form : {τ : Aty} → (πd : deco) → (o : O) → (ϕ : A-form val τ) → (A-form cpt (U τ))
 decoβ-Form πd o ϕ = clo-Form
   (functorTest (λ p → bas-Comβ (proj₁ p) (bas-Thu (bas-Comβ (proj₂ p) ϕ))) (πd o))
 
--- deco split
+-- α and β decompositions are sound for proving properties of sequenced programs
 decoα-Form-seq : (πd : deco) (as : deco-α-seq πd) → (τ : Aty) → (o : O) → (ϕ : A-form val τ)
   → (M : A-cpt (U τ)) → (pr : (M ⊧ (decoα-Form πd o ϕ)))
-  → (program-sequence M ⊧ bas-Comα o ϕ)
+  → (ty-seq M ⊧ bas-Comα o ϕ)
 decoα-Form-seq πd as τ o ϕ M pr =
   subst (α o) (sym (μ-natural (λ V → V ⊧ ϕ) M))
     (as o (mapTree (λ d → mapTree (λ V → V ⊧ ϕ) d) M)
@@ -288,7 +248,7 @@ decoα-Form-seq πd as τ o ϕ M pr =
 
 decoβ-Form-seq : (πd : deco) (as : deco-β-seq πd) → (τ : Aty) → (o : O) → (ϕ : A-form val τ)
   → (M : A-cpt (U τ)) → (pr : (M ⊧ (decoβ-Form πd o ϕ)))
-  → (program-sequence M ⊧ bas-Comβ o ϕ)
+  → (ty-seq M ⊧ bas-Comβ o ϕ)
 decoβ-Form-seq πd as τ o ϕ M pr =
   subst (β ∞ o) (sym (μ-natural (λ V → V ⊧ ϕ) M))
     (as o (mapTree (λ d → mapTree (λ V → V ⊧ ϕ) d) M)
@@ -300,8 +260,9 @@ decoβ-Form-seq πd as τ o ϕ M pr =
        (subst (λ z → z) (sym (clo-Form-eq2 (πd o) (λ x → bas-Comβ (proj₁ x)
          (bas-Thu (bas-Comβ (proj₂ x) ϕ))) M)) pr)))
 
+-- α and β decompositions are complete for proving properties of sequenced programs
 decoα-Form-unf : (πd : deco) (as : deco-α-unf πd) → (τ : Aty) → (o : O) → (ϕ : A-form val τ)
-  → (M : A-cpt (U τ)) → (pr : program-sequence M ⊧ bas-Comα o ϕ)
+  → (M : A-cpt (U τ)) → (pr : ty-seq M ⊧ bas-Comα o ϕ)
   → (M ⊧ (decoα-Form πd o ϕ))
 decoα-Form-unf πd as τ o ϕ M pr = subst (λ z → z)
   (clo-Form-eq2 (πd o) (λ x → bas-Comα (proj₁ x) (bas-Thu (bas-Comα (proj₂ x) ϕ))) M)
@@ -314,7 +275,7 @@ decoα-Form-unf πd as τ o ϕ M pr = subst (λ z → z)
           (subst (α o) (μ-natural (λ V → V ⊧ ϕ) M) pr)))
 
 decoβ-Form-unf : (πd : deco) (as : deco-β-unf πd) → (τ : Aty) → (o : O) → (ϕ : A-form val τ)
-  → (M : A-cpt (U τ)) → (pr : program-sequence M ⊧ bas-Comβ o ϕ)
+  → (M : A-cpt (U τ)) → (pr : ty-seq M ⊧ bas-Comβ o ϕ)
   → (M ⊧ (decoβ-Form πd o ϕ))
 decoβ-Form-unf πd as τ o ϕ M pr = subst (λ z → z)
   (clo-Form-eq2 (πd o) (λ x → bas-Comβ (proj₁ x) (bas-Thu (bas-Comβ (proj₂ x) ϕ))) M)
@@ -326,6 +287,8 @@ decoβ-Form-unf πd as τ o ϕ M pr = subst (λ z → z)
         (as o (mapTree (λ d → mapTree (λ V → V ⊧ ϕ) d) M)
           (subst (β ∞ o) (μ-natural (λ V → V ⊧ ϕ) M) pr)))
 
+
+-- The Curry operations preserves logical ordering, even in the absence of decomposability
 curry-preserve : {τ₀ τ₁ ρ : Aty}
   → (f g : A-val ((τ₀ ⊗ τ₁) ⇒ ρ))
   → Log-Order val ((τ₀ ⊗ τ₁) ⇒ ρ) f g
@@ -383,7 +346,7 @@ curry-preserve f g assum (bas-Fun V (bas-Comβ x₁ (clo-Form (⋁ F)))) (β-lea
 curry-preserve f g assum (bas-Fun V (bas-Comβ x₁ (clo-Form (⋀ F)))) (β-leaf x₂)
   with λ n → curry-preserve f g assum (bas-Fun V (bas-Comβ x₁ (clo-Form (F n))))
                             (β-leaf (x₂ n))
-... | pip with boolC (αl x₁)
+... | pip with boolC (πl x₁)
 ... | inj₁ x = β-leaf (λ n → β-leaf-help (λ W → g (V , W)) x₁ (clo-Form (F n)) (pip n) x)
 ... | inj₂ y = β-exep y
 curry-preserve f g assum (bas-Fun V (clo-Form (atom x₁))) x =
@@ -414,7 +377,10 @@ curry-preserve f g assum (clo-Form (⋁ x₁)) (n , x) =
 curry-preserve f g assum (clo-Form (⋀ x₁)) x =
   λ n → curry-preserve f g assum (clo-Form (x₁ n)) (x n)
 
--- congruent pull-backs
+
+
+-- The following development considers proof techniques for preservation over
+-- program compositions
 cong-prop : {σ τ : Aty} → A-val (σ ⇒ τ) → Set
 cong-prop f = ∀ (ϕ : A-form cpt _) → ∃ λ ψ → ∀ (V : A-val _) →
   ((V ⊧ ψ) → ((f V) ⊧ ϕ)) × (((f V) ⊧ ϕ) → (V ⊧ ψ))
@@ -430,6 +396,7 @@ cp-congruent f co-f V W V<W ϕ fVmϕ = proj₁ (proj₂ (co-f ϕ) W)
 compose : {σ τ ρ : Aty} → (f : A-val (σ ⇒ τ)) → (g : A-val (τ ⇒ ρ)) → A-val (σ ⇒ ρ)
 compose f g V = KleisTree g (f V)
 
+-- Preservation of logical order over post-composition of programs (f ∘ _)
 compose-pres-r : {σ τ ρ : Aty} → Decomposable → β-Decomposable
   → (f : A-val (σ ⇒ τ)) → (g₀ g₁ : A-val (τ ⇒ ρ))
   → (Log-Order _ _ g₀ g₁) → Log-Order _ _ (compose f g₀) (compose f g₁)
@@ -514,8 +481,8 @@ compose-pres-r α-dec β-dec f g₀ g₁ g₀<g₁ (clo-Form (⋁ x)) (n , g₀�
 compose-pres-r α-dec β-dec f g₀ g₁ g₀<g₁ (clo-Form (⋀ x)) g₀∘f⊧ϕ =
   λ n → compose-pres-r α-dec β-dec f g₀ g₁ g₀<g₁ (clo-Form (x n)) (g₀∘f⊧ϕ n)
 
-
--- the following uses the congruent pullback property. May be generalised to congruence?
+-- Preservations of logical ordering over precomposition of programs (_ ∘ g)
+-- Uses the congruent pullback property.
 compose-pres-l : {σ τ ρ : Aty} → Decomposable → β-Decomposable
   → (f f' : A-val (σ ⇒ τ)) → (g : A-val (τ ⇒ ρ)) → (cong-prop g)
   → (Log-Order _ _ f f') → Log-Order _ _ (compose f g) (compose f' g)
@@ -526,7 +493,6 @@ compose-pres-l α-dec β-dec f f' g co-g f<f' (bas-Fun V (bas-Comα o ϕ)) fgmϕ
     (mapTree (λ x → mapTree (λ V₁ → V₁ ⊧ ϕ) (g x)) (f' V))
       (λ o₁ os x → subst (α o₁) (sym (functTree (λ x₁ → mapTree (λ V₁ → V₁ ⊧ ϕ) (g x₁))
                        (λ t → liftTest (λ o' → α o' t) os) (f' V)))
--- preform = co-g (clo-Form (functorTest (λ o' → (bas-Comα o' ϕ)) os))
       (monotone (λ V₁ → V₁ ⊧ proj₁ (co-g (clo-Form (functorTest (λ o' → bas-Comα o' ϕ) os))))
          (λ x₁ → liftTest (λ o' → α o' (mapTree (λ V₁ → V₁ ⊧ ϕ) (g x₁))) os)
          (λ a x₁ → subst (λ z → z)
@@ -554,8 +520,7 @@ compose-pres-l α-dec β-dec f f' g co-g f<f' (bas-Fun V (bas-Comβ o ϕ)) fgmϕ
     (mapTree (λ x → mapTree (λ V₁ → V₁ ⊧ ϕ) (g x)) (f' V))
       (λ o₁ os x → subst (β ∞ o₁) (sym (functTree (λ x₁ → mapTree (λ V₁ → V₁ ⊧ ϕ) (g x₁))
                        (λ t → liftTest (λ o' → β ∞ o' t) os) (f' V)))
--- preform = co-g (clo-Form (functorTest (λ o' → (bas-Comβ o' ϕ)) os))
-      (β-monotone (λ V₁ → V₁ ⊧ proj₁ (co-g (clo-Form (functorTest (λ o' → bas-Comβ o' ϕ) os))))
+    (β-monotone (λ V₁ → V₁ ⊧ proj₁ (co-g (clo-Form (functorTest (λ o' → bas-Comβ o' ϕ) os))))
          (λ x₁ → liftTest (λ o' → β ∞ o' (mapTree (λ V₁ → V₁ ⊧ ϕ) (g x₁))) os)
          (λ a x₁ → subst (λ z → z)
                      (sym (liftnatTest (λ o' → bas-Comβ o' ϕ) (λ ψ → g a ⊧ ψ) os))
@@ -578,7 +543,8 @@ compose-pres-l α-dec β-dec f f' g co-g f<f' (bas-Fun V (bas-Comβ o ϕ)) fgmϕ
 -- variable names don't make sense below, as they are copied from above. But they work.
 compose-pres-l α-dec β-dec f g₀ g₁ g₀<g₁ pb (bas-Fun V (clo-Form (atom x))) g₀∘f⊧ϕ =
   compose-pres-l α-dec β-dec f g₀ g₁ g₀<g₁ pb (bas-Fun V x) g₀∘f⊧ϕ
-compose-pres-l α-dec β-dec f g₀ g₁ g₀<g₁ pb (bas-Fun V (clo-Form (tes ∧ tes₁))) (fst , snd) =
+compose-pres-l α-dec β-dec f g₀ g₁ g₀<g₁ pb (bas-Fun V (clo-Form (tes ∧ tes₁)))
+  (fst , snd) =
   (compose-pres-l α-dec β-dec f g₀ g₁ g₀<g₁ pb (bas-Fun V (clo-Form tes)) fst) ,
   (compose-pres-l α-dec β-dec f g₀ g₁ g₀<g₁ pb (bas-Fun V (clo-Form tes₁)) snd)
 compose-pres-l α-dec β-dec f g₀ g₁ g₀<g₁ pb (bas-Fun V (clo-Form (tes ∨ tes₁))) (inj₁ x) =

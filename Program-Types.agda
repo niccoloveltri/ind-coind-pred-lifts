@@ -17,7 +17,7 @@ open import Signatures
 open import Trees-Coinductive
 
 
--- basic agda types
+-- basic agda types, for describing program denotations
 data Aty : Set where
   N : Aty
   _⇒_ : Aty → Aty → Aty
@@ -27,6 +27,7 @@ data Aty : Set where
 pattern val = true
 pattern cpt = false
 
+-- Value and computations terms for Agda types
 A-val : Aty → Set
 A-cpt : Aty → Set
 A-cpt' : Aty → Set

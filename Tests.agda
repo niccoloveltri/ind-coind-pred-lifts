@@ -14,13 +14,13 @@ open import Axiom.Extensionality.Propositional
 
 postulate funext : ∀ {a b} → Axiom.Extensionality.Propositional.Extensionality a b
 
+-- Test logic for positive logical combinations of atoms
 data Test (A : Set) : Set where
   atom : A → Test A
   _∧_ _∨_ : Test A → Test A → Test A
   true false : Test A
   ⋁ : (ℕ → Test A) → Test A
   ⋀ : (ℕ → Test A) → Test A
---  ∁ : Set → Test A
 
 -- Proof relevant Sierpinski space
 § = Test ⊥
@@ -33,6 +33,7 @@ boolSet : Bool → Set
 boolSet false = ⊥
 boolSet true = ⊤
 
+-- Predicate lifting for tests
 liftTest : {A : Set} → (A → Set) → Test A → Set
 liftTest f (atom a) = f a
 liftTest f (T₁ ∧ T₂) = liftTest f T₁ × liftTest f T₂
@@ -41,7 +42,6 @@ liftTest f true = ⊤
 liftTest f false = ⊥
 liftTest f (⋁ T) = ∃ λ n → liftTest f (T n)
 liftTest f (⋀ T) = (n : _) → liftTest f (T n)
--- liftTest f (∁ P) = P
 
 -- Functor test
 functorTest : {A B : Set} → (f : A → B) → (Test A) → (Test B)
@@ -52,10 +52,9 @@ functorTest f true = true
 functorTest f false = false
 functorTest f (⋁ x) = ⋁ (λ n → functorTest f (x n))
 functorTest f (⋀ x) = ⋀ (λ n → functorTest f (x n))
--- functorTest f (∁ x) = ∁ x
 
--- Monad structure
 
+-- Monad structure: Kleisli lifting
 KleisTest : {A B : Set} → (A → Test B) → (Test A) → (Test B)
 KleisTest f (atom x) = f x
 KleisTest f (tes ∧ tes₁) = KleisTest f tes ∧ KleisTest f tes₁
@@ -65,6 +64,7 @@ KleisTest f false = false
 KleisTest f (⋁ x) = ⋁ (λ x₁ → KleisTest f (x x₁))
 KleisTest f (⋀ x) = ⋀ (λ x₁ → KleisTest f (x x₁))
 
+-- Strength
 strengTest : {A B : Set} → Test A × B → Test (A × B)
 strengTest (atom x , b) = atom (x , b)
 strengTest ((tes ∧ tes₁) , b) =
@@ -76,9 +76,7 @@ strengTest (false , b) = false
 strengTest (⋁ x , b) = ⋁ (λ x₁ → strengTest (x x₁ , b))
 strengTest (⋀ x , b) = ⋀ (λ x₁ → strengTest (x x₁ , b))
 
-
--- Lifttor
-
+-- Predicate lifting preserves logical order
 liftfunTest : (A : Set) → (P : A → Set) → (Q : A → Set) → (os : Test A) → ((a : A) → ((P a) → (Q a))) → (liftTest P os) → liftTest Q os
 liftfunTest A P Q (atom x) pruf assum = pruf x assum
 liftfunTest A P Q (os ∧ os₁) pruf (fst , snd) = (liftfunTest _ P Q os pruf fst) , (liftfunTest _ P Q os₁ pruf snd)
@@ -87,8 +85,8 @@ liftfunTest A P Q (os ∨ os₁) pruf (inj₂ y) = inj₂ (liftfunTest _ P Q os�
 liftfunTest A P Q true pruf tt = tt
 liftfunTest A P Q (⋁ x) pruf (n , assum) = n , (liftfunTest _ P Q (x n) pruf assum)
 liftfunTest A P Q (⋀ x) pruf hypo = λ n → liftfunTest _ P Q (x n) pruf (hypo n)
--- liftfunTest P Q (∁ x) pruf assum = assum
 
+-- Predicate lifting is natural
 liftnatTest : {A B : Set} → (f : A → B) → (P : B → Set) → (tes : Test A) → (liftTest (λ x → (P (f x))) tes) ≡ (liftTest P (functorTest f tes))
 liftnatTest f P (atom x) = refl
 liftnatTest f P (tes ∧ tes₁) = cong₂ _×_ (liftnatTest f P tes) (liftnatTest f P tes₁)
@@ -98,8 +96,7 @@ liftnatTest f P false = refl
 liftnatTest f P (⋁ x) = cong ∃ (funext (λ x₁ → liftnatTest f P (x x₁)))
 liftnatTest f P (⋀ x) = cong (λ z → (n : _) → z n) (funext (λ x₁ → liftnatTest f P (x x₁)))
 
--- distinctions by dualization
-
+-- Dualizing tests
 dualTest : {A : Set} → (tes : Test A) → Test A
 dualTest (atom x) = atom x
 dualTest (tes ∧ tes₁) = (dualTest tes) ∨ (dualTest tes₁)
@@ -109,7 +106,7 @@ dualTest false = true
 dualTest (⋁ x) = ⋀ (λ i → dualTest (x i))
 dualTest (⋀ x) = ⋁ (λ i → dualTest (x i))
 
-
+-- Naturality of the dual operation
 dualnatTest : {A B : Set} → {f : A → B} → (tes : Test A) → (functorTest f (dualTest tes)) ≡ (dualTest (functorTest f tes))
 dualnatTest (atom x) = refl
 dualnatTest (tes ∧ tes₁) = cong₂ _∨_ (dualnatTest tes) (dualnatTest tes₁)
@@ -119,6 +116,7 @@ dualnatTest false = refl
 dualnatTest (⋁ x) = cong ⋀ (funext (λ i → dualnatTest (x i)))
 dualnatTest (⋀ x) = cong ⋁ (funext (λ i → dualnatTest (x i)))
 
+-- The dual operation gives a notion of dystinction
 distTest : {A : Set} → (P Q : A → Set) → ((a : A) → (P a) → (Q a) → ⊥)
    → (tes : Test A) → (liftTest P tes) → (liftTest Q (dualTest tes)) → ⊥
 distTest P Q dist (atom x) L R = dist x L R
@@ -128,6 +126,9 @@ distTest P Q dist (test ∨ test₁) (inj₁ x) (fst , snd) = distTest P Q dist 
 distTest P Q dist (test ∨ test₁) (inj₂ y) (fst , snd) = distTest P Q dist test₁ y snd
 distTest P Q dist (⋁ x) (n , pruf) R = distTest P Q dist (x n) pruf (R n)
 distTest P Q dist (⋀ x) L (n , pruf) = distTest P Q dist (x n) (L n) pruf
+
+
+-- The following code is not fundamental to the rest of the developement
 
 -- syntactic ordering
 data synTest {A B : Set} (f : A → B → Set) : (Test A) → (Test B) → Set where
@@ -146,7 +147,6 @@ data synTest {A B : Set} (f : A → B → Set) : (Test A) → (Test B) → Set w
 pordTest : {A : Set} → (A → Set) → (Test A) → (Test A) → Set
 pordTest P tes₁ tes₂ = liftTest P tes₁ → liftTest P tes₂ 
 
-
 orderTest : (A B : Set) → (A → B → Set) → (Test A) → (Test B) → Set₁
 orderTest A B ord tesa tesb = ∀ (P : A → Set) → ∀ (Q : B → Set)
   → (∀ (a : A) → ∀ (b : B) → (ord a b) → (P a) → (Q b))
@@ -158,12 +158,3 @@ orderTest-s A ord tes₁ tes₂ = ∀ (P : A → Set)
   → liftTest P tes₁ → liftTest P tes₂
 
 
--- dual-orderTest : {A B : Set} → (ord : A → B → Set) → (tesa : Test A) → (tesb : Test B)
---   → (orderTest A B ord tesa tesb) → (orderTest B A (λ b a → ord a b) (dualTest tesb) (dualTest tesa))
--- dual-orderTest ord (atom x) tesb tesa-tesb P Q P-dro-Q P-i-tesb = {!tesa-tesb!}
--- dual-orderTest ord (tesa ∧ tesa₁) tesb tesa-tesb P Q P-dro-Q P-i-tesb = {!!}
--- dual-orderTest ord (tesa ∨ tesa₁) tesb tesa-tesb P Q P-dro-Q P-i-tesb = {!!}
--- dual-orderTest ord true tesb tesa-tesb P Q P-dro-Q P-i-tesb = {!!}
--- dual-orderTest ord false tesb tesa-tesb P Q P-dro-Q P-i-tesb = {!!}
--- dual-orderTest ord (⋁ x) tesb tesa-tesb P Q P-dro-Q P-i-tesb = {!!}
--- dual-orderTest ord (⋀ x) tesb tesa-tesb P Q P-dro-Q P-i-tesb = {!!}

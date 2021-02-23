@@ -20,7 +20,6 @@ open import Trees-Coinductive
 
 -- ==================================================
 -- Logic for typed partial combinatory algebras
--- Follows the developement of Logic and Logic-decomp
 -- ==================================================
 
 data Aty : Set where

@@ -55,7 +55,7 @@ c-help : {A : Set} → (tes : Test A) → (b : Bool) → (f : A → Set) →
   liftTest f (if b then tes else false) → (b ≡ true) × (liftTest f tes)
 c-help tes true f k = refl , k
 
--- deco formulation
+-- α-decomposition
 c-deco : deco
 c-deco n = ⋁ (λ m → ⋁ (λ k → (if (m + k) <= n then atom (m , k) else false)))
 
@@ -100,7 +100,7 @@ c-deco-α-unf (suc n) (node tt ts) (node-α x) with c-deco-α-unf n (force (ts t
 c-is-strong : Strong-Decomposable
 c-is-strong = deco-α-decomp c-deco c-deco-α-seq c-deco-α-unf
 
--- Coinductive
+-- β-decomposition
 c-deco' : deco
 c-deco' o = dualTest (c-deco o)
 

@@ -66,14 +66,11 @@ open import Examples.Pure
 -- Example: undetectable skip computation (in paper)
 open import Examples.Skip
 
--- Example: error
-open import Examples.Error
+-- Example: Execution cost (in paper)
+open import Examples.Cost
 
 -- Example: binary nondeterminism (in paper)
 open import Examples.Nondeterminism
-
--- Example: Reading and flipping bits
-open import Examples.Bit-toggle
 
 -- Example: Global store (in paper)
 open import Examples.Global-Store
@@ -81,8 +78,11 @@ open import Examples.Global-Store
 -- Example: User binary input (in paper)
 open import Examples.Input
 
--- Example: Execution cost (in paper)
-open import Examples.Cost
+-- Example: error
+open import Examples.Error
+
+-- Example: Reading and flipping bits
+open import Examples.Bit-toggle
 
 -- Example: Probability
 open import Examples.Probability
@@ -99,6 +99,7 @@ open import Languages.CBV-PCF
 open import Languages.Automata
 
 -- Logic for typed partial combinatory algebras
+-- Variation on the code of Logic and Logic-decomp (less properties though)
 open import Languages.Logic-typed
 
 

@@ -21,62 +21,73 @@ open import Logic I O αl αn
 open import Trees-Coinductive
 
 
--- Relations and their properties
+-- Properties of relations
 
+-- reflexivity
 rel-idin : ∀ {i} {A : Set} (R : A → A → Set i) → Set i
 rel-idin R = (a : _) → R a a
 
+-- composing relations
 rel-comp : ∀ {i} {A B C : Set} (R : A → B → Set i) (S : B → C → Set i) → A → C → Set i
 rel-comp R S a c = Σ _ λ b → ((R a b) × (S b c))
 
+-- inclusion of relations
 rel-ord : ∀ {i} {A B : Set} (R S : A → B → Set i) → Set i
 rel-ord R S = (a : _) → (b : _) → (R a b) → (S a b)
 
+-- transitivity
 rel-tran : ∀ {i} {A : Set} (R : A → A → Set i) → Set i
 rel-tran R = rel-ord (rel-comp R R) R
 
+-- union
 rel-∪ :  ∀ {i} {A B : Set} (R S : A → B → Set i) → A → B → Set i
 rel-∪ R S a b = (R a b) ⊎ (S a b)
 
+-- n-fold composition
 rel-n : ∀ {i} {A : Set} (R : A → A → Set i) → ℕ → A → A → Set i
 rel-n R zero = R
 rel-n R (suc n) = rel-comp (rel-n R n) R
 
+-- the transitive/reflexive closure
 rel-⋆ : ∀ {i} {A : Set} (R : A → A → Set i) → A → A → Set i
 rel-⋆ R a b = ∃ λ n → rel-n R n a b
 
--- props
-
+-- left and right inclusion of relation union
 rel-∪-ord1 :  ∀ {i} {A B : Set} (R S : A → B → Set i) → rel-ord R (rel-∪ R S)
 rel-∪-ord1 R S a b aRb = inj₁ aRb
 
 rel-∪-ord2 :  ∀ {i} {A B : Set} (R S : A → B → Set i) → rel-ord S (rel-∪ R S)
 rel-∪-ord2 R S a b aSb = inj₂ aSb
 
+-- symmetry of union
 rel-∪-sym :  ∀ {i} {A B : Set} (R S : A → B → Set i) → rel-ord (rel-∪ R S) (rel-∪ S R)
 rel-∪-sym R S a b (inj₁ aRb) = inj₂ aRb
 rel-∪-sym R S a b (inj₂ aSb) = inj₁ aSb
 
+-- associativity of union
 rel-∪-ass :  ∀ {i} {A B : Set} (R S T : A → B → Set i) → rel-ord R S → rel-ord S T
   → rel-ord R T
 rel-∪-ass R S T R<S S<T a b aRb = S<T a b (R<S a b aRb)
 
-
+-- transitive/reflexive closure contains the original relation
 rel-⋆-ord : ∀ {i} {A : Set} (R : A → A → Set i) → rel-ord R (rel-⋆ R)
 rel-⋆-ord R a b aRb = (zero , aRb)
 
+
 -- ==============================================
---   Help
+--   Relation lifting
 -- ==============================================
 
+-- When a predicate is correct according to an endongenous relation
 corp : ∀ {i} (A : Set) (R : A → A → Set i) (f : A → Set) → Set i
 corp A R f = (a b : A) → f a → R a b → f b
 
+-- Correctness preservation over relation inclusion
 corp-ord : ∀ {i} (A : Set) (R S : A → A → Set i) → (f : A → Set)
   → corp A S f → (rel-ord R S) → corp A R f
 corp-ord A R S f Sf R<S a b fa aRb = Sf a b fa (R<S a b aRb) 
 
-
+-- Relation lifting to coinductive trees, induced by α and β respectively
 Γα : ∀ {i} (A : Set) (R : A → A → Set i) (t r : Tree I A) → Set (lsuc lzero ⊔ i)
 Γα A R t r = (f : A → Set) → corp A R f → (o : O) → liftTree f o t → liftTree f o r
 
@@ -87,20 +98,24 @@ corp-ord A R S f Sf R<S a b fa aRb = Sf a b fa (R<S a b aRb)
 Γβ' A R t r = (f : A → Set) → corp A R f → (o : O)
   → β-liftTree f o t → β-liftTree' f o r
 
+-- Combined relation lifting
 Γ : ∀ {i} {A : Set} (R : A → A → Set i) (t r : Tree I A) → Set (lsuc lzero ⊔ i)
 Γ R t r = (Γα _ R t r) × Γβ _ R t r
 
+-- ==================================
+-- properties of the relation lifting
 
--- properties
-
+-- monotonicity
 Γ-mono : ∀ {i} {A : Set} (R S : A → A → Set i) → rel-ord R S → rel-ord (Γ R) (Γ S)
 Γ-mono R S R<S t r (tΓαr , tΓβr) =
   (λ f Sf o t-of → tΓαr f (corp-ord _ R S f Sf R<S) o t-of) ,
   (λ f Sf o t-of → tΓβr f (corp-ord _ R S f Sf R<S) o t-of)
 
+-- reflexivity
 Γ-id : ∀ {i} {A : Set} (R : A → A → Set i) → rel-idin R → rel-idin (Γ R)
 Γ-id R refR t = (λ f x o x₁ → x₁) , (λ f x o x₁ → x₁)
 
+-- functoriality
 Γ-functor : ∀ {i} {A B : Set} (f : A → B) (R : B → B → Set i) (t t' : Tree I A)
   → Γ (λ a a' → R (f a) (f a')) t t' → Γ R (mapTree f t) (mapTree f t')
 proj₁ (Γ-functor f R t t' (as-α , as-β)) g Rg o ft-og =
@@ -113,8 +128,7 @@ proj₂ (Γ-functor f R t t' (as-α , as-β)) g Rg o ft-og =
   (subst (β ∞ o) (functTree f g t) ft-og))
 
 
--- Towers and decomposability
-
+-- Relation liftings are preserved over monadic multiplication, given decomposability
 Γα-doub : {A : Set} → Decomposable → (R : A → A → Set₁) → (D E : Tree I (Tree I A))
   → Γα _ (Γα _ R) D E → Γα _ R (μTree D) (μTree E) 
 Γα-doub decom R D E DααRE f Rf o μDof =
@@ -157,31 +171,42 @@ proj₂ (Γ-doub decom β-dec R D E DΓΓRE) = Γβ-doub β-dec R D E
   (proj₂ (Γ-mono (Γ R) (Γβ _ R) (λ a b x → proj₂ x) D E DΓΓRE))
 
 
--- typed relations
+-- =======================
+-- well-typed relations
+-- =======================
 
+-- relations on program denotation indexed by Agda types
 typed-rel : Set₁
 typed-rel = (a : Bool) → (τ : Aty) → (P Q : A-term a τ) → Set
 
+
+-- extension of relation properties to well-typed relations
+
+-- inclusion
 typed-rel-ord : (R S : typed-rel) → Set
 typed-rel-ord R S = (a : Bool) → (τ : Aty) → rel-ord (R a τ) (S a τ)
 
+-- union
 typed-rel-∪ : (R S : typed-rel) → typed-rel
 typed-rel-∪ R S a τ = rel-∪ (R a τ) (S a τ)
 
+-- transitive/reflexive closure
 typed-rel-⋆ : (R : typed-rel) → typed-rel
 typed-rel-⋆ R a τ = rel-⋆ (R a τ)
 
+-- union inclusions
 typed-rel-∪-ord1 :  (R S : typed-rel) → typed-rel-ord R (typed-rel-∪ R S)
 typed-rel-∪-ord1 R S a τ = rel-∪-ord1 (R a τ) (S a τ)
 
 typed-rel-∪-ord2 :  (R S : typed-rel) → typed-rel-ord S (typed-rel-∪ R S)
 typed-rel-∪-ord2 R S a τ = (rel-∪-ord2 (R a τ) (S a τ))
 
+-- transitive/reflexive closure inclusion
 typed-rel-⋆-ord : (R : typed-rel) → typed-rel-ord R (typed-rel-⋆ R)
 typed-rel-⋆-ord R a τ = rel-⋆-ord (R a τ)
 
--- simulations
 
+-- Helpful auxiliary constructions 
 llif : (i : Level) → Set i → Set (lsuc i)
 llif i A = Set i → A
 llif-p : ∀ {i} (A : Set i) → A → llif i A
@@ -192,6 +217,8 @@ llif-b A x = x A
 TOK : Set
 TOK = Bool
 
+
+-- Properties for formulating applicative simulation condition
 simulprop : (R : typed-rel) → (a : Bool) → (τ : Aty) → (P Q : A-term a τ)
   → (R a τ P Q) → Set₁
 simulprop R cpt τ P Q PRQ = Γ (R val τ) P Q
@@ -201,11 +228,12 @@ simulprop R val (σ ⊗ τ) P Q PRQ =
   llif lzero (R val σ (proj₁ P) (proj₁ Q)) × llif lzero (R val τ (proj₂ P) (proj₂ Q))
 simulprop R val (U τ) P Q PRQ = llif lzero (R cpt τ P Q)
 
-
+-- Predicate testing whether a typed relation is an applicative simulation
 simulation : (R : typed-rel) → Set₁
 simulation R =  (a : Bool) → (τ : Aty) → (P Q : A-term a τ)
   → (PRQ : R a τ P Q) → simulprop R a τ P Q PRQ
 
+-- The union of applicative simulations is an applicative simulation
 simulation-∪ : (R S : typed-rel) → (simulation R) → (simulation S)
   → simulation (typed-rel-∪ R S)
 simulation-∪ R S simR simS cpt τ P Q (inj₁ PRQ) = Γ-mono (R val τ)
@@ -231,6 +259,8 @@ simulation-∪ R S simR simS val (τ ⊗ τ₁) P Q (inj₂ PSQ) =
 simulation-∪ R S simR simS val (U τ) P Q (inj₂ PSQ) z =
   inj₂ (simS val (U τ) P Q PSQ z)
 
+-- The transitive/reflexive closure of an applicative simulation is
+-- an applicative simulation
 simulation-⋆ : (R : typed-rel) → (simulation R) → (simulation (typed-rel-⋆ R))
 simulation-⋆ R simR cpt τ P Q (zero , PRnQ) = Γ-mono (R val τ) (typed-rel-⋆ R val τ)
   (rel-⋆-ord (R val τ)) P Q (simR cpt τ P Q PRnQ)
@@ -263,12 +293,11 @@ simulation-⋆ R simR val (U τ) P Q (suc n , M , PRnM , MRQ) | hypo =
   λ z → suc (proj₁ (hypo z)) , M , (proj₂ (hypo z) , simR val (U τ) M Q MRQ z)
 
 
--- Set1
-
+-- Applicative similarity
 simil : (a : Bool) → (τ : Aty) → (P Q : A-term a τ) → Set₁
 simil a τ P Q = ∃ λ R → simulation R × R a τ P Q
 
--- Transitivity!
+-- Transitivity of applicative similarity
 simil-tra : {a : Bool} → {τ : Aty} → (P M Q : A-term a τ)
   → simil a τ P M → simil a τ M Q → simil a τ P Q
 simil-tra P M Q (R , simR , PRM) (S , simS , MSQ) = (typed-rel-⋆ (typed-rel-∪ R S)) ,
@@ -276,7 +305,7 @@ simil-tra P M Q (R , simR , PRM) (S , simS , MSQ) = (typed-rel-⋆ (typed-rel-�
   (suc zero , M , (inj₁ PRM , inj₂ MSQ)))
 
 
--- inclusion
+-- Applicative similarity implies logical ordering
 rel-form : (R : typed-rel) → (simulation R) → (a : Bool) → (τ : Aty)
   → (ϕ : A-form a τ) → (P Q : A-term a τ)
   → (R a τ P Q) → (P ⊧ ϕ) → (Q ⊧ ϕ)

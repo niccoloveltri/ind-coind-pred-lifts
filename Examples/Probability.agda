@@ -59,6 +59,7 @@ RatDou (RatEnc (p , q)) = RatEnc ((2 * p) , (q - p))
 
 p-obs = RatInt
 
+-- Formulation of probabilistic observations
 p-leaf : p-obs → Bool
 p-leaf = λ x → true
 
