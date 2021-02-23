@@ -1,0 +1,184 @@
+module Languages.CBV-PCF (Sig : Set) (ar : Sig → Set) where
+
+open import Relation.Binary.PropositionalEquality
+open import Data.Sum renaming (map to map⊎)
+open import Data.Product
+open import Data.Unit
+open import Data.Bool
+open import Data.Nat
+open import Function hiding (_⟶_)
+
+open import Trees-Coinductive
+
+-- -- Deep embedding of fine-grained call-by-value PCF
+
+open import Signatures
+open add-skip Sig ar
+
+
+-- types
+data Ty : Set where
+  N : Ty
+  _⟶_ : Ty → Ty → Ty
+
+-- contexts
+infix 10 _∙_
+data Cxt : Set where
+  ε : Cxt
+  _∙_ : Cxt → Ty → Cxt  
+
+-- membership of a variable in a context
+infix 5 _∈_
+data _∈_ (τ : Ty) : Cxt → Set where
+  zero : ∀{Γ} → τ ∈ Γ ∙ τ
+  suc : ∀{Γ ρ} → τ ∈ Γ → τ ∈ Γ ∙ ρ
+
+-- removal of a variable from context
+_∖_ : ∀ Γ {τ} → τ ∈ Γ → Cxt
+(Γ ∙ τ) ∖ zero = Γ
+(Γ ∙ ρ) ∖ suc m = (Γ ∖ m) ∙ ρ
+
+varEq : {Γ : Cxt} {τ ρ : Ty} → τ ∈ Γ → (m : ρ ∈ Γ) → τ ≡ ρ ⊎ τ ∈ Γ ∖ m
+varEq zero zero = inj₁ refl
+varEq zero (suc mρ) = inj₂ zero
+varEq (suc mτ) zero = inj₂ mτ
+varEq (suc mτ) (suc mρ) = map⊎ id suc (varEq mτ mρ)
+
+-- subset relation between contexts
+infix 6 _⊆_
+data _⊆_ : Cxt → Cxt → Set where
+  ε : ε ⊆ ε
+  lift : ∀{Γ Δ τ} → Γ ⊆ Δ → Γ ∙ τ ⊆ Δ ∙ τ
+  wk : ∀{Γ Δ τ} → Γ ⊆ Δ → Γ ⊆ Δ ∙ τ
+
+id⊆ : ∀ {Γ} → Γ ⊆ Γ
+id⊆ {ε} = ε
+id⊆ {Γ ∙ τ} = lift (id⊆ {Γ})
+
+∈⊆ : ∀{Γ Δ τ} → τ ∈ Γ → Γ ⊆ Δ → τ ∈ Δ
+∈⊆ m (wk s) = suc (∈⊆ m s)
+∈⊆ zero (lift s) = zero
+∈⊆ (suc m) (lift s) = suc (∈⊆ m s)
+
+pattern val = true
+pattern cpt = false
+
+-- well-typed terms
+data Tm : Bool → Cxt → Ty → Set where
+  var : ∀{Γ τ} → τ ∈ Γ → Tm val Γ τ
+  Z : ∀{Γ} → Tm val Γ N
+  S : ∀{Γ} → Tm val Γ N → Tm val Γ N
+  case : ∀{Γ τ} → Tm val Γ N → Tm cpt Γ τ → Tm cpt (Γ ∙ N) τ → Tm cpt Γ τ
+  app : ∀{Γ τ ρ} → Tm val Γ (τ ⟶ ρ) → Tm val Γ τ → Tm cpt Γ ρ
+  lam : ∀{Γ τ ρ} → Tm cpt (Γ ∙ τ) ρ → Tm val Γ (τ ⟶ ρ)
+  fix : ∀{Γ τ ρ} → Tm val Γ ((τ ⟶ ρ) ⟶ (τ ⟶ ρ)) → Tm cpt Γ (τ ⟶ ρ)
+  return : ∀{Γ τ} → Tm val Γ τ → Tm cpt Γ τ
+  let-in : ∀{Γ τ ρ} → Tm cpt Γ τ → Tm cpt (Γ ∙ τ) ρ → Tm cpt Γ ρ
+  op : ∀ (σ : Sig) {Γ τ} → (ar σ → Tm cpt Γ τ) → Tm cpt Γ τ
+
+-- admissibility of weakening 
+weak : ∀{k Γ Δ τ} → Γ ⊆ Δ → Tm k Γ τ → Tm k Δ τ
+weak s (var x) = var (∈⊆ x s)
+weak s Z = Z
+weak s (S t) = S (weak s t)
+weak s (case n t₁ t₂) = case (weak s n) (weak s t₁) (weak (lift s) t₂)
+weak s (app t u) = app (weak s t) (weak s u)
+weak s (lam t) = lam (weak (lift s) t)
+weak s (fix t) = fix (weak s t)
+weak s (return t) = return (weak s t)
+weak s (let-in t u) = let-in (weak s t) (weak (lift s) u)
+weak s (op σ t) = op σ (λ i → weak s (t i))
+
+weakLast : ∀{k Γ τ ρ} → Tm k Γ τ → Tm k (Γ ∙ ρ) τ
+weakLast t = weak (wk id⊆) t
+
+-- admissibility of substitution
+sub : ∀{k Γ τ ρ}
+  → Tm k Γ τ → (m : ρ ∈ Γ) → Tm val (Γ ∖ m) ρ
+  → Tm k (Γ ∖ m) τ
+sub (var mτ) mρ u with varEq mτ mρ
+... | inj₁ refl = u
+... | inj₂ mτ' = var mτ'
+sub Z mρ u = Z
+sub (S t) mρ u = S (sub t mρ u)
+sub (case t t₁ t₂) mρ u =
+  case (sub t mρ u) (sub t₁ mρ u) (sub t₂ (suc mρ) (weakLast u))
+sub (app t v) mρ u = app (sub t mρ u) (sub v mρ u)
+sub (lam t) mρ u = lam (sub t (suc mρ) (weakLast u))
+sub (fix t) mρ u = fix (sub t mρ u)
+sub (return t) mρ u = return (sub t mρ u)
+sub (let-in t v) mρ u = let-in (sub t mρ u) (sub v (suc mρ) (weakLast u))
+sub (op σ t) mρ u = op σ (λ i → sub (t i) mρ u)
+
+subLast : ∀{k Γ τ ρ} → Tm k (Γ ∙ ρ) τ → Tm val Γ ρ → Tm k Γ τ
+subLast t u = sub t zero u
+
+-- stacks
+data Stack : Ty → Ty → Set where
+  ε : ∀{ρ} → Stack ρ ρ
+  _∙_ : ∀ {τ τ' ρ} → Stack τ ρ → Tm cpt (ε ∙ τ') τ → Stack τ' ρ
+
+appStack : ∀ {τ ρ} → Stack τ ρ → Tm cpt ε τ → Tm cpt ε ρ
+appStack ε t = t
+appStack (s ∙ m) t = appStack s (let-in t m)
+
+-- coalgebra corresponding to operational semantics of computations
+opSem : ∀{ρ} → Σ Ty (λ τ → Stack τ ρ × Tm cpt ε τ)
+  → Tm val ε ρ
+     ⊎
+     Σ Sig⊥ λ σ → ar⊥ σ → Σ Ty (λ τ → Stack τ ρ × Tm cpt ε τ)
+opSem (τ , s , case Z t₁ t₂) = inj₂ (skip , λ _ → _ , s , t₁ )
+opSem (τ , s , case (S n) t₁ t₂) = inj₂ (skip , λ _ → _ , s , subLast t₂ n)
+opSem (τ , s , app (lam t) u) = inj₂ (skip , (λ _ → _ , s , subLast t u))
+-- opSem (τ , s , fix F) =
+--  inj₂ (skip , λ _ → _ , s , return (lam
+--    (let-in (weakLast (app F (lam (let-in (fix (weakLast F))
+--                                         (app (var zero) (var (suc zero)))))))
+--            (app (var zero) (var (suc zero))))))
+opSem (τ , s , fix F) =
+  inj₂ (skip , λ _ → _ , s , app F (lam (let-in (fix (weakLast F))
+                                         (app (var zero) (var (suc zero))))))
+opSem (τ , ε , return t) = inj₁ t
+opSem (τ , _∙_ {τ'} s m , return t) = inj₂ (skip , λ _ → τ' , s , subLast m t)
+opSem (τ , s , let-in {τ = τ'} t u) = inj₂ (skip , λ _ → τ' , s ∙ u , t)
+opSem (τ , s , op σ t) = inj₂ (` σ , λ i → τ , s , t i)
+
+-- Closed terms sets
+TTerm : Bool → Ty → Set
+TTerm a τ = Tm a ε τ
+TVal : Ty → Set
+TVal = TTerm val
+TCom : Ty → Set
+TCom = TTerm cpt
+
+numeral : ℕ → (TVal N)
+numeral zero = Z
+numeral (suc n) = S (numeral n)
+
+-- the tree generated by the operational semantics
+-- (i.e. the denotational sematics of a term)
+effTree : ∀ {k τ} → Tm k ε τ → Tree ar⊥ (Tm val ε τ)
+effTree {cpt} {τ} t = unfoldTree opSem (τ , ε , t)
+effTree {val} t = leaf t
+
+
+Tdenot : {τ : Ty} → (TCom τ) → (Tree ar⊥  (TVal τ))
+Tdenot M = effTree M
+
+
+
+token-elem-val : (τ : Ty) → TTerm val τ
+token-elem-val N = Z
+token-elem-val (τ ⟶ τ₁) = lam (weak (wk ε) (return (token-elem-val τ₁)))
+token-elem : (a : Bool) → (τ : Ty) → TTerm a τ
+token-elem cpt τ = return (token-elem-val τ)
+token-elem val τ = token-elem-val τ
+
+
+
+CBV-num-ext : (TTerm val N) → ℕ
+CBV-num-ext Z = 0
+CBV-num-ext (S P) = suc (CBV-num-ext P)
+
+app-cv :  ∀{Γ τ ρ} → Tm cpt Γ (τ ⟶ ρ) → Tm val Γ τ → Tm cpt Γ ρ
+app-cv M V = let-in M (app (var zero) (weakLast V))
