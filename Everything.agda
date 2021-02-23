@@ -99,7 +99,7 @@ open import Languages.CBV-PCF
 open import Languages.Automata
 
 -- Logic for typed partial combinatory algebras
--- Variation on the code of Logic and Logic-decomp (less properties though)
+-- Variation on the code of Logic and Logic-decomp
 open import Languages.Logic-typed
 
 
