@@ -1,7 +1,7 @@
 # Inductive and coinductive predicate liftings for effectful programs
 ## Niccolò Veltri and Niels Voorneveld
 
-This is the Agda formalization for the paper submitted to FSCD 2021, with the same name.
+This is the Agda formalization for the paper submitted to MFPS 2021, with the same name.
 
 We formulate a framework for describing behaviour of effectful higher-order recursive programs. Examples of effects we consider include: execution cost, nondeterminism, and interaction with a user, and are implemented using effect operations. The denotational semantics of a program is given by a coinductive tree in a cofree monad, which combines potential return values of the program in terms of effect operations. 
 	
