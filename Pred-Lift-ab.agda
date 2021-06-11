@@ -26,7 +26,7 @@ open import Trees-Coinductive
 import Pred-Lift-a
 open Pred-Lift-a I O πl πn   public
 import Pred-Lift-b
-open Pred-Lift-b I O πl πn   public
+open Pred-Lift-b I O πl (λ k o → dualTest (πn k o))  public
 
 
 -- Distinction result: distinct predicates are lifted to distinct predicate on trees

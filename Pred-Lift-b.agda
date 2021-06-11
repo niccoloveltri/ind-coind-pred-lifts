@@ -28,7 +28,7 @@ mutual
     β-leaf : ∀ {P o} → P → β i o (leaf P)
     β-exep : ∀ {P o} → (πl o ≡ false) → β i o (leaf P)
     β-node : ∀ {k ts o}
-      → liftTest (uncurry (λ x o' → β' i o' (force (ts x)))) (dualTest (πn k o))
+      → liftTest (uncurry (λ x o' → β' i o' (force (ts x)))) (πn k o)
       → β i o (node k ts)
 
   record β' (i : Size) (o : O) (t : PTree I) : Set where
@@ -62,7 +62,7 @@ t β'⊏ t' = (o : O) → β ∞ o t → β' ∞ o t'
 β-monotone f g f-g (leaf P) o (β-leaf xfP) = β-leaf (f-g P xfP)
 β-monotone f g f-g (leaf P) o (β-exep -L) = β-exep -L
 β-monotone f g f-g (node k ts) o (β-node x) =
-  β-node (β-mono-help' (dualTest (πn k o)) f g f-g (λ i → force (ts i)) x)
+  β-node (β-mono-help' (πn k o) f g f-g (λ i → force (ts i)) x)
 β-force (β-monotone' f g f-g t o left) = β-monotone f g f-g t o left
 β-mono-help' (atom x) f g ord ts left =
   β-monotone' f g ord (ts (proj₁ x)) (proj₂ x) (β-force left)
